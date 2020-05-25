@@ -1,0 +1,30 @@
+<idea-plugin>
+    <id>sse.tongji.coidea</id>
+    <name>CoIdea</name>
+    <vendor email="15801781997@163.com" url="https://github.com/zhenzhenz">Tongji</vendor>
+
+    <description><![CDATA[
+    Real-Time Collaborative Programming with IntelliJ IDEA.<br>
+    ]]></description>
+
+    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+         on how to target different products -->
+    <!-- uncomment to enable plugin in all products
+    <depends>com.intellij.modules.lang</depends>
+    -->
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Add your extensions here -->
+    </extensions>
+
+    <actions>
+        <!-- Add your actions here -->
+        <group id="CoIntelliJIdea.CoIntelliJIdeaMenu" text="CoIdea" description="CoIntelliJIdea">
+            <add-to-group group-id="MainMenu" anchor="last"  />
+            <action id="CoIntelliJIdea.CoIdea" class="action.InitCoIdea" text="Connect"
+                    description="Collaborative real-time editor"/>
+            <action id="CoIntelliJIdea.EditorHandler" class="action.Disconnect" text="Disconnect"
+                    description="Synchronize the file real-time"/>
+        </group>
+    </actions>
+</idea-plugin>
