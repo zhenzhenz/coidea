@@ -348,6 +348,15 @@ public class CollaborationService {
         }
     }
 
+    public void localCaretMove(String path, int offset, String username) {
+        if (StringUtils.isNotBlank(path)) {
+            System.out.println("path:" + path);
+            System.out.println("offset: " + offset);
+            otClient.getOpenedFile(FilePathUtil.getProjectRelativePath(path)).localCaretMove(offset);
+            log.info("localCaretMove: " + path + " " + offset);
+        }
+    }
+
     public void displayNotification(String text) {
         log.info("[SYSTEM] " + DateUtil.getCurrentSimpleTime() + text);
 

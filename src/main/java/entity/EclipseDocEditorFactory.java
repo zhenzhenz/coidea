@@ -76,6 +76,15 @@ public class EclipseDocEditorFactory {
             }
 
             @Override
+            public void onCaretMove(int offset, CoUser user) {
+                log.info("File {0} onCaretMove: {1}", _path, offset);
+                DocumentEditor.remoteCaretOffset = offset;
+                DocumentEditor.docMap.get(_path).highlightLine(user.getUserName());
+//                cp.st.redraw();
+//                cp.st.notifyAll();
+            }
+
+            @Override
             public void onRewrite(String data) {
                 log.info("File {0} onRewrite data: {1}", _path, data);
                 if (StringUtils.isNotBlank(data) && !data.equals(_document.getText())) {

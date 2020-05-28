@@ -1,14 +1,13 @@
 package action;
 
-import client.CollaborationService;
-import client.DocumentEditor;
-import client.FileClient;
-import client.ZipService;
+import client.*;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.command.WriteCommandAction;
+import com.intellij.openapi.editor.CaretModel;
 import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileEditor.*;
@@ -23,9 +22,7 @@ import config.ApiConfig;
 import dal.DALPolicySettingData;
 import entity.EclipseDocEditorFactory;
 import entity.Repository;
-import listeners.MyDocumentListener;
-import listeners.MyProjectManagerListener;
-import listeners.MyVirtualFileListener;
+import listeners.*;
 import org.jetbrains.annotations.NotNull;
 import dev.mtage.eyjaot.client.OtClient;
 import util.MyLogger;
@@ -50,8 +47,7 @@ public class InitCoIdea extends AnAction {
         FileClient.project = project;
 //        NotificationClient.project = project
 //        ZipService.project = project
-//        ApiClient.project = project
-//        HightlightClient.project = project
+        HightlightClient.project = project;
 
 
         String userID;
@@ -62,11 +58,12 @@ public class InitCoIdea extends AnAction {
                 Messages.getQuestionIcon()
         );
         System.out.println(userID);
+        DocumentEditor.username = userID;
 
         Pair<String, Boolean> pair =  Messages.showInputDialogWithCheckBox(
-                "What the portalId?",
-                "Input the portalId",
-                "Is New Portal",
+                "What the repo-Id?",
+                "Input the repo-Id",
+                "Is New repo",
                 false,
                 true,
                 Messages.getQuestionIcon(),
@@ -81,9 +78,6 @@ public class InitCoIdea extends AnAction {
 ////            ZipUtil.initIgnoreList(file)
 //        }
 
-//        ApiClient.portalId = pair.first
-//        ApiClient.initNewPortal = pair.second
-//        ApiClient.connect()
 
         Repository repository = new Repository(userID, pair.first, pair.second, ApiConfig.DEFAULT_SERVER_ADDR, false, new DALPolicySettingData());
 
@@ -94,6 +88,8 @@ public class InitCoIdea extends AnAction {
         CollaborationService.createInstance(project, repository);
 
         ProjectManager.getInstance().addProjectManagerListener(project, new MyProjectManagerListener());
+        EditorFactory.getInstance().addEditorFactoryListener(new MyEditorFactoryListener(),project);
+
         MessageBus messageBus = project.getMessageBus();
         messageBus.connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
             @Override
@@ -104,19 +100,21 @@ public class InitCoIdea extends AnAction {
                 if (document != null){
                     String path = FileClient.GetPath(file);
                     DocumentEditor docEditor = new DocumentEditor(project, document, project.getName()+ "/" + path);
+
+//                    DocumentEditor.remoteCaretOffset = 6;
+//                    docEditor.highlightLine("user");
+
                     MyDocumentListener documentListener = new MyDocumentListener(docEditor, "/" + project.getName()+ "/" + path);
                     document.addDocumentListener(documentListener);
                     docEditor.myDocumentListener = documentListener;
+
+                    MyCaretListener caretListener = new MyCaretListener(docEditor, "/" + project.getName()+ "/" + path);
+                    CaretModel caret = source.getSelectedTextEditor().getCaretModel();
+                    caret.addCaretListener(caretListener);
+
                     CollaborationService.getInstance().openFile(EclipseDocEditorFactory.getLocalDocEditor(project, document,project.getName()+ "/" + path, file.getName()));
 
-//                    val caretListener = MyCaretListener()
-//                    val caret = source.selectedTextEditor?.caretModel
-//                    caret?.addCaretListener(caretListener)
-//                    docEditor.caret = caret
-//                    docEditor.myCaretListener = caretListener
-//                    JsEngine.invoke("newDoc",ApiClient.portalId,path,docEditor)
                 }
-//                ApiClient.send(Gson().toJson(OpenFileAction(FileClient.GetPath(file),"Java")))
                 System.out.println("source: " + source + "; open file: " + file);
 
             }
@@ -125,7 +123,14 @@ public class InitCoIdea extends AnAction {
             public void fileClosed(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
 //                JsEngine.invoke("deleteDoc",FileClient.GetPath(file))
 //                ApiClient.send(Gson().toJson(CloseFileAction(FileClient.GetPath(file))))
+                Project project = source.getProject();
+                Document document = FileDocumentManager.getInstance().getDocument(file);
+                String path = FileClient.GetPath(file);
                 System.out.println("source: " + source + "; close file: " + file);
+                if (CollaborationService.getStatus() == CoServiceStatusEnum.CONNECTED ||
+                        CollaborationService.getStatus() == CoServiceStatusEnum.INITED) {
+                    CollaborationService.getInstance().closeFile(EclipseDocEditorFactory.getLocalDocEditor(project, document,project.getName()+ "/" + path, file.getName() ));
+                }
             }
         });
 

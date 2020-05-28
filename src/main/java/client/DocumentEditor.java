@@ -16,6 +16,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class DocumentEditor {
     public static Map<String, DocumentEditor> docMap = new HashMap<String, DocumentEditor>();
     public static volatile AtomicBoolean isRemotePlaying = new AtomicBoolean(false);
+    public static int remoteCaretOffset = -1;
+    public static String username = "";
 
     public Project project;
     public Document document;
@@ -42,6 +44,10 @@ public class DocumentEditor {
     }
 
     public Boolean isWritable = true;
+
+    public void highlightLine(String username){
+        HightlightClient.hightlight(document, username);
+    }
 
     public void refreshFile(){
         Runnable runnable = new Runnable() {
