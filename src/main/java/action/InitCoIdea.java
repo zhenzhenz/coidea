@@ -45,7 +45,7 @@ public class InitCoIdea extends AnAction {
         }
 
         FileClient.project = project;
-//        NotificationClient.project = project
+        NotificationClient.project = project;
 //        ZipService.project = project
         HightlightClient.project = project;
 

@@ -1,6 +1,7 @@
 package listeners;
 
 import client.CollaborationService;
+import client.NotificationClient;
 import com.intellij.openapi.vfs.VirtualFileEvent;
 import com.intellij.openapi.vfs.VirtualFileListener;
 import org.jetbrains.annotations.NotNull;
@@ -26,6 +27,7 @@ public class MyVirtualFileListener implements VirtualFileListener {
             System.out.println(event.getFile().getPath());
             System.out.println(isResourceListening.toString());
             CollaborationService.getInstance().localCreateFile(new File(event.getFile().getPath()));
+            NotificationClient.notify("File Created", "Create Local File: " + event.getFileName());
         }
 
 
@@ -45,6 +47,7 @@ public class MyVirtualFileListener implements VirtualFileListener {
             System.out.println(event.getFile().getPath());
             System.out.println(isResourceListening.toString());
             CollaborationService.getInstance().localDeleteFile(new File(event.getFile().getPath()));
+            NotificationClient.notify("File Deleted", "Delete Local File: " + event.getFileName());
         }
 
 

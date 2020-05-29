@@ -168,6 +168,7 @@ public class CollaborationService {
             } catch (IOException e) {
                 log.error("read zip file exception", e);
             }
+            displayConnSuccessInfo();
         } else {
             otClient.joinRepo(repository.getRepositoryId(), repository.getUserId(), new LocalRepositoryEditor());
         }
@@ -359,17 +360,20 @@ public class CollaborationService {
 
     public void displayNotification(String text) {
         log.info("[SYSTEM] " + DateUtil.getCurrentSimpleTime() + text);
+        NotificationClient.notify("Hi ! ", text);
 
     }
 
     public void displayConnSuccessInfo() {
         serviceStatus = CoServiceStatusEnum.CONNECTED;
         log.info("Your name: " + repository.getUserId());
+        NotificationClient.notify("CoIdea Init Successed!", "Username: " + repository.getUserId() + "\nReposID: " + repository.getRepositoryId());
     }
 
     public void displayErrorInfo(String text) {
         log.info("Error Occurs");
         log.info(text);
+        NotificationClient.notify("Error Occurs", text);
 
     }
 
