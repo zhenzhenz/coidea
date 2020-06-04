@@ -1,38 +1,32 @@
 package client;
 
 import com.google.common.collect.Lists;
-import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFileManager;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import config.ApiConfig;
+import config.FileConfig;
 import dal.DALPolicySettingData;
 import dev.mtage.eyjaot.client.OtClient;
 import dev.mtage.eyjaot.client.inter.ILocalFileEditor;
 import dev.mtage.eyjaot.client.inter.ILocalRepositoryEditor;
 import dev.mtage.eyjaot.core.CoUser;
 import dev.mtage.eyjaot.core.dal.DalPolicySettings;
+import entity.Repository;
+import listeners.MyVirtualFileListener;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-
-import config.ApiConfig;
-import config.FileConfig;
-import entity.Repository;
-import entity.inter.ICoProject;
 import util.DateUtil;
 import util.FilePathUtil;
 import util.MyLogger;
-import listeners.MyVirtualFileListener;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.util.List;
 import java.util.*;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
-import com.intellij.openapi.vfs.LocalFileSystem;
 
 /**
  * portal 核心逻辑业务类

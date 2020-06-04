@@ -104,7 +104,7 @@ public class DocumentEditor {
     }
 
     public void onRewrite(String text) {
-
+        DocumentEditor.isRemotePlaying.set(true);
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
@@ -115,6 +115,8 @@ public class DocumentEditor {
             @Override
             public void run() {
                 WriteCommandAction.runWriteCommandAction(project, runnable);
+                DocumentEditor.isRemotePlaying.set(false);
+                System.out.println("done");
             }
         });
     }
