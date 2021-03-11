@@ -8,6 +8,7 @@ import com.intellij.openapi.editor.markup.EffectType;
 import com.intellij.openapi.editor.markup.RangeHighlighter;
 import com.intellij.openapi.editor.markup.TextAttributes;
 import com.intellij.openapi.project.Project;
+import com.intellij.ui.JBColor;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -47,7 +48,7 @@ public class HightlightClient {
                 int lineNumber = _document.getLineNumber(offset);
                 int endOffset = _document.getLineEndOffset(lineNumber);
                 int begOffset = _document.getLineStartOffset(lineNumber);
-                TextAttributes textAttributes = new TextAttributes(null, Color.orange, null, EffectType.BOXED, 0);
+                TextAttributes textAttributes = new TextAttributes(null, new Color(75, 75, 75), null, EffectType.BOXED, 0);
                 WriteCommandAction.runWriteCommandAction(project, new Runnable() {
                     @Override
                     public void run() {

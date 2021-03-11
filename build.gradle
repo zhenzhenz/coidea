@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id("maven")
     id 'org.jetbrains.intellij' version '0.4.21'
 }
 
@@ -9,11 +10,28 @@ version '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
+    maven {
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/cscw-and-se/eyja-ot")
+        credentials {
+            username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+            password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+        }
+    }
+    maven {
+        name = "GitHubPackages Foundation"
+        url = uri("https://maven.pkg.github.com/majiaxin110/myf-foundation")
+        credentials {
+            username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+            password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+        }
+    }
 }
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     compile fileTree(dir:'lib',includes:['*jar'])
+    implementation 'dev.mtage:eyja-ot-client:0.0.1-SNAPSHOT'
 }
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
