@@ -1,6 +1,7 @@
 package action;
 
 import client.*;
+import com.intellij.dupLocator.equivalence.MultiChildDescriptor;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
@@ -8,6 +9,8 @@ import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.CaretModel;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.EditorFactory;
+import com.intellij.openapi.editor.actionSystem.TypedAction;
+import com.intellij.openapi.editor.actionSystem.TypedActionHandler;
 import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileEditor.*;
@@ -83,7 +86,7 @@ public class InitCoIdea extends AnAction {
 
         log.info("初始化Repository信息: {0}", repository.toString());
 
-        VirtualFileManager.getInstance().addVirtualFileListener(new MyVirtualFileListener());
+//        VirtualFileManager.getInstance().addVirtualFileListener(new MyVirtualFileListener());
 
         CollaborationService.createInstance(project, repository);
 
@@ -111,6 +114,10 @@ public class InitCoIdea extends AnAction {
                     MyCaretListener caretListener = new MyCaretListener(docEditor, "/" + project.getName()+ "/" + path);
                     CaretModel caret = source.getSelectedTextEditor().getCaretModel();
                     caret.addCaretListener(caretListener);
+
+                    MyTypedActionHandler myTypedActionHandler = new MyTypedActionHandler();
+                    TypedActionHandler oldHandler = TypedAction.getInstance().setupRawHandler(myTypedActionHandler);
+                    myTypedActionHandler.setOldHandler(oldHandler);
 
                     CollaborationService.getInstance().openFile(EclipseDocEditorFactory.getLocalDocEditor(project, document,project.getName()+ "/" + path, file.getName()));
 

@@ -156,11 +156,15 @@ public class CollaborationService {
                         .timeoutSecond(dalPolicySettingData.timeoutsecond)
                         .build();
 
+                Thread.sleep(800);
+
                 otClient.newRepo(repository.getRepositoryId(), repository.getUserId(),
                         Files.readAllBytes(zipFile.toPath()), dalPolicySettings, new LocalRepositoryEditor());
                 serviceStatus = CoServiceStatusEnum.INITED;
             } catch (IOException e) {
                 log.error("read zip file exception", e);
+            } catch (InterruptedException e) {
+                log.error("InterruptedException", e);
             }
             displayConnSuccessInfo();
         } else {
