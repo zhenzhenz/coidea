@@ -5,6 +5,7 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Pair;
 import dev.mtage.eyjaot.client.inter.view.ConnConfigurationInput;
 import dev.mtage.eyjaot.client.inter.view.IConnConfigureView;
+import sse.tongji.coidea.config.CoIDEAUIString;
 
 import java.util.Objects;
 
@@ -15,6 +16,10 @@ import java.util.Objects;
 public class ConnConfigurationDialog implements IConnConfigureView {
     private Project localProject;
     private ConnConfigurationInput connConfigurationInput;
+
+    public ConnConfigurationDialog(Project localProject) {
+        this.localProject = localProject;
+    }
 
     @Override
     public ConnConfigurationInput readConfigurationInput() {
@@ -29,13 +34,13 @@ public class ConnConfigurationDialog implements IConnConfigureView {
         String userName = Messages.showInputDialog(
                 localProject,
                 "What is your name?",
-                "NewCoIdea: Input your name",
+                "NewCoIdea: Input Your Name",
                 Messages.getQuestionIcon()
         );
 
         Pair<String, Boolean> pair = Messages.showInputDialogWithCheckBox(
                 "What the repo-Id?",
-                "NewCoIdea: Input the repo-Id",
+                "NewCoIdea: Input the Repo-Id",
                 "new repo",
                 false,
                 true,
@@ -48,6 +53,7 @@ public class ConnConfigurationDialog implements IConnConfigureView {
                 .userName(userName)
                 .repoId(pair.first)
                 .newRepo(pair.second)
+                .serverAddr(CoIDEAUIString.DEFAULT_SERVER_ADDR)
                 .openDal(false)
                 .build();
     }

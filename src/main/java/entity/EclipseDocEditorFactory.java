@@ -54,6 +54,11 @@ public class EclipseDocEditorFactory {
             }
 
             @Override
+            public void releaseSemaphore() {
+                CollaborationService.getInstance().getDocumentSemaphore().release();
+            }
+
+            @Override
             public void onInsert(SimpleInsertTextOperation operation, EditOperationSourceEnum source, CoUser coUser) {
                 Integer pos = operation.getPosition();
                 String text = operation.getContent();

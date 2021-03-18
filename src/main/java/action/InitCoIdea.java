@@ -6,6 +6,7 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.command.WriteCommandAction;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.CaretModel;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.EditorFactory;
@@ -35,6 +36,7 @@ import java.io.File;
 
 public class InitCoIdea extends AnAction {
     private MyLogger log = MyLogger.getLogger(InitCoIdea.class);
+    private Logger logger = Logger.getInstance(InitCoIdea.class);
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
@@ -83,6 +85,8 @@ public class InitCoIdea extends AnAction {
 
 
         Repository repository = new Repository(userID, pair.first, pair.second, ApiConfig.DEFAULT_SERVER_ADDR, false, new DALPolicySettingData());
+
+        logger.info("Logger Test!!");
 
         log.info("初始化Repository信息: {0}", repository.toString());
 
