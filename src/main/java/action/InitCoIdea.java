@@ -1,37 +1,32 @@
 package action;
 
 import client.*;
-import com.intellij.dupLocator.equivalence.MultiChildDescriptor;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
-import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.CaretModel;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.actionSystem.TypedAction;
 import com.intellij.openapi.editor.actionSystem.TypedActionHandler;
-import com.intellij.openapi.fileChooser.FileChooser;
-import com.intellij.openapi.fileChooser.FileChooserDescriptor;
-import com.intellij.openapi.fileEditor.*;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.util.messages.MessageBus;
 import config.ApiConfig;
 import dal.DALPolicySettingData;
+import dev.mtage.eyjaot.client.OtClient;
 import entity.EclipseDocEditorFactory;
 import entity.Repository;
 import listeners.*;
 import org.jetbrains.annotations.NotNull;
-import dev.mtage.eyjaot.client.OtClient;
 import util.MyLogger;
-
-import java.io.File;
 
 
 public class InitCoIdea extends AnAction {
@@ -48,6 +43,8 @@ public class InitCoIdea extends AnAction {
         if (project == null){
             return;
         }
+        log.info("当前Project basePath={0} name={1} projectFilePath={2}",
+                project.getBasePath(), project.getName(), project.getProjectFilePath());
 
         FileClient.project = project;
         NotificationClient.project = project;

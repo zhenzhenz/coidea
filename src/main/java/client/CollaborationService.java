@@ -156,7 +156,7 @@ public class CollaborationService {
                         .timeoutSecond(dalPolicySettingData.timeoutsecond)
                         .build();
 
-                Thread.sleep(800);
+                Thread.sleep(1500);
 
                 otClient.newRepo(repository.getRepositoryId(), repository.getUserId(),
                         Files.readAllBytes(zipFile.toPath()), dalPolicySettings, new LocalRepositoryEditor());

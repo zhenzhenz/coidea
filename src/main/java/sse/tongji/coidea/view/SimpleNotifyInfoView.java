@@ -59,7 +59,7 @@ public class SimpleNotifyInfoView implements INotificationView, IBasicCollaborat
 
     @Override
     public void sysNotify(String msg) {
-        Notification notification = errorGroup.createNotification(msg, CoIDEAUIString.GENERAL_TITLE,
+        Notification notification = infoGroup.createNotification(msg, CoIDEAUIString.GENERAL_TITLE,
                 NotificationType.INFORMATION, null);
         notification.notify(localProject);
     }

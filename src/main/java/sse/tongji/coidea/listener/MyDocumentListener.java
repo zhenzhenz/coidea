@@ -1,4 +1,4 @@
-package listeners;
+package sse.tongji.coidea.listener;
 
 import client.CollaborationService;
 import client.DocumentEditor;

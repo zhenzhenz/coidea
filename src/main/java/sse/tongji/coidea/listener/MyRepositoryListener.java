@@ -3,6 +3,7 @@ package sse.tongji.coidea.listener;
 import com.intellij.openapi.vfs.VirtualFileEvent;
 import com.intellij.openapi.vfs.VirtualFileListener;
 import org.jetbrains.annotations.NotNull;
+import sse.tongji.coidea.presenter.LocalRepositoryPresenter;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -16,6 +17,12 @@ public class MyRepositoryListener implements VirtualFileListener {
 
     public static void resumeListening() {
         isResourceListening.set(true);
+    }
+
+    private LocalRepositoryPresenter localRepositoryPresenter;
+
+    public MyRepositoryListener(LocalRepositoryPresenter localRepositoryPresenter) {
+        this.localRepositoryPresenter = localRepositoryPresenter;
     }
 
     @Override
