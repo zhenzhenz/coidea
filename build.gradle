@@ -6,7 +6,7 @@ plugins {
 
 configurations.all {
     // 改成0会导致每次build比较慢，但可以及时拉到最新的snapshot包哦
-    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    resolutionStrategy.cacheChangingModulesFor 120, 'seconds'
 }
 
 group 'sse.tongji'
@@ -38,6 +38,8 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     compile fileTree(dir: 'lib', includes: ['*jar'])
     implementation 'dev.mtage:eyja-ot-client:0.0.2-SNAPSHOT'
+    compileOnly 'org.projectlombok:lombok:1.18.16'
+    annotationProcessor 'org.projectlombok:lombok:1.18.16'
 }
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/

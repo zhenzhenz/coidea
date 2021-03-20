@@ -2,12 +2,14 @@ package sse.tongji.coidea.listener;
 
 import com.intellij.openapi.vfs.VirtualFileEvent;
 import com.intellij.openapi.vfs.VirtualFileListener;
+import dev.mtage.eyjaot.client.inter.util.MyLogger;
 import org.jetbrains.annotations.NotNull;
 import sse.tongji.coidea.presenter.LocalRepositoryPresenter;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MyRepositoryListener implements VirtualFileListener {
+    private MyLogger log = MyLogger.getLogger(MyRepositoryListener.class);
 
     public static AtomicBoolean isResourceListening = new AtomicBoolean(true);
 
@@ -26,32 +28,29 @@ public class MyRepositoryListener implements VirtualFileListener {
     }
 
     @Override
-    public void fileCreated(@NotNull VirtualFileEvent event){
-        if (!isResourceListening.get())
-        {
+    public void fileCreated(@NotNull VirtualFileEvent event) {
+        if (!isResourceListening.get()) {
             return;
         }
-
+        localRepositoryPresenter.onLocalFileCreate(event.getFile().getPath(), event.getFileName());
     }
 
     @Override
     public void fileDeleted(@NotNull VirtualFileEvent event) {
-        if (!isResourceListening.get())
-        {
+        if (!isResourceListening.get()) {
             System.out.println("isResourceListening false");
             return;
         }
 
-
+        localRepositoryPresenter.onLocalFileDelete(event.getFile().getPath(), event.getFileName());
     }
 
     @Override
-    public void contentsChanged(@NotNull VirtualFileEvent event){
-        if (!isResourceListening.get())
-        {
+    public void contentsChanged(@NotNull VirtualFileEvent event) {
+        if (!isResourceListening.get()) {
             return;
         }
-
+//        log.info("{0} file content changed", event.getFile().getPath());
     }
 }
 

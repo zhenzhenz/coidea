@@ -23,7 +23,8 @@ public class MyTypedActionHandler implements TypedActionHandler {
 
     @Override
     public void execute(@NotNull Editor editor, char charTyped, @NotNull DataContext dataContext) {
-        log.info("doc text: {} charTyped:{}", editor.getDocument().getText(), charTyped);
+        log.info("doc text: {} charTyped:{} context:{}",
+                editor.getDocument().getText(), charTyped, dataContext);
         try {
             Thread.sleep(500);
         } catch (InterruptedException e) {

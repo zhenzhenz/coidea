@@ -53,7 +53,7 @@ public class ConnConfigurationDialog implements IConnConfigureView {
                 .userName(userName)
                 .repoId(pair.first)
                 .newRepo(pair.second)
-                .serverAddr(CoIDEAUIString.DEFAULT_SERVER_ADDR)
+                .serverAddr(CoIDEAUIString.WS_SERVER_PREFIX + CoIDEAUIString.DEFAULT_SERVER_ADDR)
                 .openDal(false)
                 .build();
     }

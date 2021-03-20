@@ -26,6 +26,7 @@ import entity.EclipseDocEditorFactory;
 import entity.Repository;
 import listeners.*;
 import org.jetbrains.annotations.NotNull;
+import sse.tongji.coidea.util.CoIDEAFilePathUtil;
 import util.MyLogger;
 
 
@@ -101,6 +102,8 @@ public class InitCoIdea extends AnAction {
                 file.setDetectedLineSeparator("\n");
                 Project project = source.getProject();
                 Document document = FileDocumentManager.getInstance().getDocument(file);
+                log.info("file opened path={0} getPath={1} modifiedPath={2}", file.getPath(),
+                        CoIDEAFilePathUtil.getProjectRelativePath(file.getPath(), project));
                 if (document != null){
                     String path = FileClient.GetPath(file);
                     DocumentEditor docEditor = new DocumentEditor(project, document, project.getName()+ "/" + path);

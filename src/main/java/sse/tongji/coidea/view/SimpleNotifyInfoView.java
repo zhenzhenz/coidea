@@ -7,7 +7,11 @@ import com.intellij.openapi.project.Project;
 import dev.mtage.eyjaot.client.inter.view.GeneralUIStringConfig;
 import dev.mtage.eyjaot.client.inter.view.IBasicCollaborationInfoView;
 import dev.mtage.eyjaot.client.inter.view.INotificationView;
+import dev.mtage.eyjaot.core.CoUser;
 import sse.tongji.coidea.config.CoIDEAUIString;
+
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 /**
  * 简单地推送通知
@@ -38,28 +42,33 @@ public class SimpleNotifyInfoView implements INotificationView, IBasicCollaborat
 
     @Override
     public void displayConnErr(String errMsg) {
-        Notification notification = errorGroup.createNotification(errMsg, CoIDEAUIString.GENERAL_TITLE,
+        Notification notification = errorGroup.createNotification(CoIDEAUIString.GENERAL_TITLE, errMsg,
                 NotificationType.ERROR, null);
         notification.notify(localProject);
     }
 
     @Override
     public void displayConnSuccess() {
-        Notification notification = errorGroup.createNotification(GeneralUIStringConfig.CONNECTED, CoIDEAUIString.GENERAL_TITLE,
-                NotificationType.ERROR, null);
+        Notification notification = infoGroup.createNotification(CoIDEAUIString.GENERAL_TITLE, GeneralUIStringConfig.CONNECTED,
+                NotificationType.INFORMATION, null);
         notification.notify(localProject);
     }
 
     @Override
+    public void displayCollaborators(Collection<CoUser> coUsers) {
+        sysNotify("Collaborators: " + coUsers.stream().map(CoUser::getUserName).collect(Collectors.joining(", ")));
+    }
+
+    @Override
     public void displayConnBroken(String msg) {
-        Notification notification = errorGroup.createNotification(msg, CoIDEAUIString.GENERAL_TITLE,
+        Notification notification = errorGroup.createNotification(CoIDEAUIString.GENERAL_TITLE, msg,
                 NotificationType.WARNING, null);
         notification.notify(localProject);
     }
 
     @Override
     public void sysNotify(String msg) {
-        Notification notification = infoGroup.createNotification(msg, CoIDEAUIString.GENERAL_TITLE,
+        Notification notification = infoGroup.createNotification(CoIDEAUIString.GENERAL_TITLE, msg,
                 NotificationType.INFORMATION, null);
         notification.notify(localProject);
     }

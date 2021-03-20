@@ -33,36 +33,11 @@ public class MyFileEditorManagerListener implements FileEditorManagerListener {
     @Override
     public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
         file.setDetectedLineSeparator("\n");
-        Project project = source.getProject();
-        Document document = FileDocumentManager.getInstance().getDocument(file);
-        if (document != null) {
-            String path = FileClient.GetPath(file);
-            DocumentEditor docEditor = new DocumentEditor(project, document, project.getName() + "/" + path);
-
-            MyDocumentListener documentListener = new MyDocumentListener(docEditor, "/" + project.getName() + "/" + path);
-            document.addDocumentListener(documentListener);
-            docEditor.myDocumentListener = documentListener;
-
-            MyTypedActionHandler myTypedActionHandler = new MyTypedActionHandler();
-            TypedActionHandler oldHandler = TypedAction.getInstance().setupRawHandler(myTypedActionHandler);
-            myTypedActionHandler.setOldHandler(oldHandler);
-
-        }
-        System.out.println("source: " + source + "; open file: " + file);
-
+        localRepositoryPresenter.onLocalFileOpen(source, file);
     }
 
     @Override
     public void fileClosed(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
-//                JsEngine.invoke("deleteDoc",FileClient.GetPath(file))
-//                ApiClient.send(Gson().toJson(CloseFileAction(FileClient.GetPath(file))))
-        Project project = source.getProject();
-        Document document = FileDocumentManager.getInstance().getDocument(file);
-        String path = FileClient.GetPath(file);
-        System.out.println("source: " + source + "; close file: " + file);
-        if (CollaborationService.getStatus() == CoServiceStatusEnum.CONNECTED ||
-                CollaborationService.getStatus() == CoServiceStatusEnum.INITED) {
-            CollaborationService.getInstance().closeFile(EclipseDocEditorFactory.getLocalDocEditor(project, document, project.getName() + "/" + path, file.getName()));
-        }
+        localRepositoryPresenter.onLocalFileClose(source, file);
     }
 }
