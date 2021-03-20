@@ -23,10 +23,10 @@ import sse.tongji.coidea.presenter.LocalRepositoryPresenter;
  * @author mtage
  * @since 2021/3/19 20:00
  */
-public class MyFileEditorManagerListener implements FileEditorManagerListener {
+public class MyFileOpenCloseListener implements FileEditorManagerListener {
     private LocalRepositoryPresenter localRepositoryPresenter;
 
-    public MyFileEditorManagerListener(LocalRepositoryPresenter localRepositoryPresenter) {
+    public MyFileOpenCloseListener(LocalRepositoryPresenter localRepositoryPresenter) {
         this.localRepositoryPresenter = localRepositoryPresenter;
     }
 

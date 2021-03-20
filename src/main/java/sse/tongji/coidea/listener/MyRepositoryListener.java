@@ -2,6 +2,7 @@ package sse.tongji.coidea.listener;
 
 import com.intellij.openapi.vfs.VirtualFileEvent;
 import com.intellij.openapi.vfs.VirtualFileListener;
+import dev.mtage.eyjaot.client.inter.util.GeneralFileIgnoreUtil;
 import dev.mtage.eyjaot.client.inter.util.MyLogger;
 import org.jetbrains.annotations.NotNull;
 import sse.tongji.coidea.presenter.LocalRepositoryPresenter;
@@ -29,19 +30,19 @@ public class MyRepositoryListener implements VirtualFileListener {
 
     @Override
     public void fileCreated(@NotNull VirtualFileEvent event) {
-        if (!isResourceListening.get()) {
+        if (!isResourceListening.get() || GeneralFileIgnoreUtil.isIgnored(event.getFileName())) {
             return;
         }
+        log.info("isResourceListening {0}", isResourceListening.get());
         localRepositoryPresenter.onLocalFileCreate(event.getFile().getPath(), event.getFileName());
     }
 
     @Override
     public void fileDeleted(@NotNull VirtualFileEvent event) {
-        if (!isResourceListening.get()) {
+        if (!isResourceListening.get() || GeneralFileIgnoreUtil.isIgnored(event.getFileName())) {
             System.out.println("isResourceListening false");
             return;
         }
-
         localRepositoryPresenter.onLocalFileDelete(event.getFile().getPath(), event.getFileName());
     }
 

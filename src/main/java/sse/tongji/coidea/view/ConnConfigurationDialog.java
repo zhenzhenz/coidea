@@ -23,9 +23,7 @@ public class ConnConfigurationDialog implements IConnConfigureView {
 
     @Override
     public ConnConfigurationInput readConfigurationInput() {
-        if (Objects.isNull(connConfigurationInput)) {
-            this.show();
-        }
+        this.show();
         return this.connConfigurationInput;
     }
 
@@ -38,23 +36,26 @@ public class ConnConfigurationDialog implements IConnConfigureView {
                 Messages.getQuestionIcon()
         );
 
-        Pair<String, Boolean> pair = Messages.showInputDialogWithCheckBox(
-                "What the repo-Id?",
-                "NewCoIdea: Input the Repo-Id",
-                "new repo",
-                false,
-                true,
-                Messages.getQuestionIcon(),
-                "",
-                null
-        );
+        if (Objects.nonNull(userName)) {
+            Pair<String, Boolean> pair = Messages.showInputDialogWithCheckBox(
+                    "What the repo-Id?",
+                    "NewCoIdea: Input the Repo-Id",
+                    "new repo",
+                    false,
+                    true,
+                    Messages.getQuestionIcon(),
+                    "",
+                    null
+            );
 
-        this.connConfigurationInput = ConnConfigurationInput.builder()
-                .userName(userName)
-                .repoId(pair.first)
-                .newRepo(pair.second)
-                .serverAddr(CoIDEAUIString.WS_SERVER_PREFIX + CoIDEAUIString.DEFAULT_SERVER_ADDR)
-                .openDal(false)
-                .build();
+            this.connConfigurationInput = ConnConfigurationInput.builder()
+                    .userName(userName)
+                    .repoId(pair.first)
+                    .newRepo(pair.second)
+                    .serverAddr(CoIDEAUIString.WS_SERVER_PREFIX + CoIDEAUIString.DEFAULT_SERVER_ADDR)
+                    .openDal(false)
+                    .build();
+        }
+
     }
 }

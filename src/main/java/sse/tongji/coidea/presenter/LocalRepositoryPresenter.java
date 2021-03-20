@@ -2,10 +2,13 @@ package sse.tongji.coidea.presenter;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.actionSystem.TypedAction;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import dev.mtage.error.CommonSysException;
@@ -19,9 +22,10 @@ import dev.mtage.eyjaot.core.CoUser;
 import dev.mtage.eyjaot.core.dal.DalPolicySettings;
 import org.apache.commons.collections4.CollectionUtils;
 import sse.tongji.coidea.config.CoIDEAUIString;
-import sse.tongji.coidea.listener.MyFileEditorManagerListener;
+import sse.tongji.coidea.listener.MyFileOpenCloseListener;
 import sse.tongji.coidea.listener.MyRepositoryListener;
 import sse.tongji.coidea.listener.MyTypedActionHandler;
+import sse.tongji.coidea.util.CoIDEAFilePathUtil;
 import sse.tongji.coidea.view.*;
 
 import java.io.IOException;
@@ -52,7 +56,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
     private AnActionEvent connectAction;
 
     private MyRepositoryListener repositoryListener;
-    private MyFileEditorManagerListener fileEditorManagerListener;
+    private MyFileOpenCloseListener fileEditorManagerListener;
     private MyTypedActionHandler typedActionHandler;
 
 
@@ -83,8 +87,10 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
             return;
         }
         this.connConfig = this.connConfigureView.readConfigurationInput();
-        connectAndSync(this.connConfig);
-        e.getPresentation().setEnabled(false);
+        if (Objects.nonNull(this.connConfig) && Objects.nonNull(this.connConfig.getUserName())) {
+            connectAndSync(this.connConfig);
+            e.getPresentation().setEnabled(false);
+        }
     }
 
 
@@ -114,6 +120,9 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
                                     .isLockingMethods(conf.isLockMethods())
                                     .build()
                             , this);
+                    this.repositoryListener = new MyRepositoryListener(this);
+                    MyRepositoryListener.resumeListening();
+                    VirtualFileManager.getInstance().addVirtualFileListener(repositoryListener);
                 } catch (IOException e) {
                     collaborationInfoView.displayConnErr("Error when compressing your repository: " + e.getMessage());
                     log.error("read repo all data IOException", e);
@@ -121,13 +130,15 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
 
             } else {
                 otClient.joinRepo(conf.getRepoId(), conf.getUserName(), this);
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    log.error("InterruptedException", e);
+                }
             }
 
             // 设置全项目监听
-            this.repositoryListener = new MyRepositoryListener(this);
-            MyRepositoryListener.resumeListening();
-            VirtualFileManager.getInstance().addVirtualFileListener(repositoryListener);
-            this.fileEditorManagerListener = new MyFileEditorManagerListener(this);
+            this.fileEditorManagerListener = new MyFileOpenCloseListener(this);
             this.project.getMessageBus().connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER,
                    this.fileEditorManagerListener);
             this.typedActionHandler = new MyTypedActionHandler(this);
@@ -179,7 +190,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
 
     public void onLocalFileClose(FileEditorManager source, VirtualFile file) {
         log.warn("local file closed {0}", file.getPath());
-        onLocalFileClose(file.getPath(), file.getName());
+        onLocalFileClose(CoIDEAFilePathUtil.getProjectRelativePath(file.getPath(), project), file.getName());
     }
 
 
@@ -188,6 +199,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         log.info("接收到来自服务器的项目文件");
         MyRepositoryListener.pauseListening();
         try {
+            log.info("repo listening {0}", MyRepositoryListener.isResourceListening.get());
             repositoryView.syncDataToDefault(repoData);
         } catch (IOException e) {
             log.error("IOException", e);
@@ -199,8 +211,17 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         }
         this.dalPolicySettings = dalPolicySettings;
 
-        log.info("接受全项目文件处理完毕 resume listening...");
-        MyRepositoryListener.resumeListening();
+        log.info("接受全项目文件处理完毕");
+
+        ApplicationManager.getApplication().invokeAndWait(() -> {
+            WriteCommandAction.runWriteCommandAction(project, () -> {
+                LocalFileSystem.getInstance().refreshWithoutFileWatcher(false);
+                log.info("resume listening...");
+                this.repositoryListener = new MyRepositoryListener(this);
+                MyRepositoryListener.resumeListening();
+                VirtualFileManager.getInstance().addVirtualFileListener(repositoryListener);
+            });
+        });
     }
 
     private boolean connected() {

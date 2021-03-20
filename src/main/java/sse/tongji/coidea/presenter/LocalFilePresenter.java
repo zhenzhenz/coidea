@@ -16,7 +16,6 @@ import dev.mtage.eyjaot.core.operation.SimpleDeleteTextOperation;
 import dev.mtage.eyjaot.core.operation.SimpleInsertTextOperation;
 import lombok.Setter;
 import sse.tongji.coidea.listener.MyDocumentListener;
-import sse.tongji.coidea.listener.MyTypedActionHandler;
 import sse.tongji.coidea.util.CoIDEAFilePathUtil;
 
 
