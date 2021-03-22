@@ -4,7 +4,9 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.actionSystem.TypedAction;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
@@ -16,6 +18,8 @@ import dev.mtage.eyjaot.client.OtClient;
 import dev.mtage.eyjaot.client.entity.ClientCoFile;
 import dev.mtage.eyjaot.client.inter.presenter.GeneralLocalRepositoryPresenter;
 import dev.mtage.eyjaot.client.inter.presenter.IFilePresenter;
+import dev.mtage.eyjaot.client.inter.util.FilePathUtil;
+import dev.mtage.eyjaot.client.inter.util.GeneralFileIgnoreUtil;
 import dev.mtage.eyjaot.client.inter.util.MyLogger;
 import dev.mtage.eyjaot.client.inter.view.*;
 import dev.mtage.eyjaot.core.CoUser;
@@ -29,6 +33,8 @@ import sse.tongji.coidea.util.CoIDEAFilePathUtil;
 import sse.tongji.coidea.view.*;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -89,7 +95,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         this.connConfig = this.connConfigureView.readConfigurationInput();
         if (Objects.nonNull(this.connConfig) && Objects.nonNull(this.connConfig.getUserName())) {
             connectAndSync(this.connConfig);
-            e.getPresentation().setEnabled(false);
+//            e.getPresentation().setEnabled(false);
         }
     }
 
@@ -178,18 +184,47 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
                 .acquireSemaphore();
     }
 
+    @Override
+    public void onLocalFileCreate(String absolutePath, String fileName) {
+        log.info("local file created {0}", absolutePath);
+        super.onLocalFileCreate(absolutePath, fileName);
+    }
+
+    public void onLocalFileCreate(VirtualFile file) {
+        String projectRelativePath = FilePathUtil.getProjectRelativePath(file.getPath(),
+                repositoryView.getDefaultProjectPath(), repositoryView.getDefaultProjectName());
+        if (Files.isDirectory(Paths.get(file.getPath()))) {
+            otClient.createDir(projectRelativePath, file.getName());
+        }
+        ApplicationManager.getApplication().invokeLater(() -> {
+            Document document = FileDocumentManager.getInstance().getDocument(file);
+            otClient.createFile(projectRelativePath, projectRelativePath, document.getText());
+            log.info("send create file request {0} name: {1}", projectRelativePath, file.getName());
+        });
+    }
+
     public void onLocalFileOpen(FileEditorManager source, VirtualFile file) {
         log.info("local file open {0}", file.getPath());
+        if (GeneralFileIgnoreUtil.isIgnored(file.getName())) {
+            log.info("local file opened and ignored {0}", file.getPath());
+            return;
+        }
         LocalFilePresenter localFilePresenter = new LocalFilePresenter(project, file);
         String fileRelativePath = getProjectRelativePath(file, project);
-        ClientCoFile clientCoFile = otClient.openFile(fileRelativePath, file.getName(), localFilePresenter);
-        localFilePresenter.setOtClientCoFile(clientCoFile);
-        localFilePresenter.setLocalRepositoryPresenter(this);
-        this.openedFilePresenters.put(fileRelativePath, localFilePresenter);
+        ApplicationManager.getApplication().invokeLater(() -> {
+            ClientCoFile clientCoFile = otClient.openFile(fileRelativePath, file.getName(), localFilePresenter);
+            localFilePresenter.setOtClientCoFile(clientCoFile);
+            localFilePresenter.setLocalRepositoryPresenter(this);
+            this.openedFilePresenters.put(fileRelativePath, localFilePresenter);
+        });
     }
 
     public void onLocalFileClose(FileEditorManager source, VirtualFile file) {
         log.warn("local file closed {0}", file.getPath());
+        if (GeneralFileIgnoreUtil.isIgnored(file.getName())) {
+            log.info("local file closed and ignored {0}", file.getPath());
+            return;
+        }
         onLocalFileClose(CoIDEAFilePathUtil.getProjectRelativePath(file.getPath(), project), file.getName());
     }
 
@@ -224,13 +259,35 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         });
     }
 
+    @Override
+    public void onError(String code, String message) {
+        super.onError(code, message);
+//        this.connectAction.getPresentation().setEnabled(true);
+    }
+
+    @Override
+    public void onCreateDir(String path, CoUser user) {
+        MyRepositoryListener.pauseListening();
+        super.onCreateDir(path, user);
+        MyRepositoryListener.resumeListening();
+    }
+
+    @Override
+    public void onCreateFile(String path, String content, CoUser user) {
+        MyRepositoryListener.pauseListening();
+        super.onCreateFile(path, content, user);
+        MyRepositoryListener.resumeListening();
+    }
+
+    @Override
+    public void onDeleteDir(String path, CoUser user) {
+        MyRepositoryListener.pauseListening();
+        super.onDeleteDir(path, user);
+        MyRepositoryListener.resumeListening();
+    }
+
     private boolean connected() {
         return otClient.isConnected();
     }
 
-    @Override
-    public void onError(String code, String message) {
-        super.onError(code, message);
-        this.connectAction.getPresentation().setEnabled(true);
-    }
 }
