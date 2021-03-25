@@ -6,7 +6,7 @@ plugins {
 
 configurations.all {
     // 改成0会导致每次build比较慢，但可以及时拉到最新的snapshot包哦
-    resolutionStrategy.cacheChangingModulesFor 1200, 'seconds'
+//    resolutionStrategy.cacheChangingModulesFor 1200, 'seconds'
 }
 
 group 'sse.tongji'

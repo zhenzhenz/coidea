@@ -18,6 +18,8 @@ import lombok.Setter;
 import sse.tongji.coidea.listener.MyDocumentListener;
 import sse.tongji.coidea.util.CoIDEAFilePathUtil;
 
+import java.util.concurrent.TimeUnit;
+
 
 /**
  * @author mtage
@@ -44,14 +46,19 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
         FileDocumentManager.getInstance().getDocument(virtualFile).addDocumentListener(this.myDocumentListener);
     }
 
+    public boolean tryAcquireSemaphore(long timeOut, TimeUnit timeUnit) throws InterruptedException {
+        return this.documentSemaphore.tryAcquire(timeOut, timeUnit);
+    }
+
     public void onLocalEdit(DocumentEvent event) {
         if (event.getOldLength() != 0) {
             log.info("local delete {0} {1}", event.getOffset(), event.getOldFragment().toString());
             otClientCoFile.localDelete(event.getOffset(), event.getOffset() + event.getOldLength());
-        }
-        if (event.getNewLength() != 0) {
+        } else if (event.getNewLength() != 0) {
             log.info("local insert {0} {1}", event.getOffset(), event.getOldFragment().toString());
             otClientCoFile.localInsert(event.getOffset(), event.getNewFragment().toString());
+        } else {
+            log.error("本地文档变化但未识别处理 {0}", event);
         }
         log.info("本地文档变化处理完成 尝试释放文档编辑锁");
         releaseSemaphore();

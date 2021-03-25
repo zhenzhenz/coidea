@@ -1,11 +1,11 @@
 package sse.tongji.coidea.presenter;
 
+import com.intellij.ide.IdeEventQueue;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.editor.actionSystem.TypedAction;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
@@ -26,9 +26,10 @@ import dev.mtage.eyjaot.core.CoUser;
 import dev.mtage.eyjaot.core.dal.DalPolicySettings;
 import org.apache.commons.collections4.CollectionUtils;
 import sse.tongji.coidea.config.CoIDEAUIString;
+import sse.tongji.coidea.config.ConnectionConfig;
+import sse.tongji.coidea.listener.MyAllKeyListener;
 import sse.tongji.coidea.listener.MyFileOpenCloseListener;
 import sse.tongji.coidea.listener.MyRepositoryListener;
-import sse.tongji.coidea.listener.MyTypedActionHandler;
 import sse.tongji.coidea.util.CoIDEAFilePathUtil;
 import sse.tongji.coidea.view.*;
 
@@ -63,7 +64,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
 
     private MyRepositoryListener repositoryListener;
     private MyFileOpenCloseListener fileEditorManagerListener;
-    private MyTypedActionHandler typedActionHandler;
+//    private MyTypedActionHandler typedActionHandler;
 
 
     public LocalRepositoryPresenter(IConnConfigureView connConfigureView, IBasicCollaborationInfoView collaborationInfoView,
@@ -106,13 +107,19 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
             log.info("尝试连接，配置 {0}", conf);
             conf.validate();
             this.otClient = OtClient.createWsClient(conf.getServerAddr()).connect();
-            while (!otClient.isConnected()) {
+            for (int i = 0; i < ConnectionConfig.INIT_CONNECT_MAX; i++) {
+                if (otClient.isConnected()) {
+                    break;
+                }
                 try {
                     // 这个地方确实设计得不大好...未来应该考虑异步回调
-                    //noinspection BusyWait
                     Thread.sleep(20);
                 } catch (InterruptedException e) {
                     log.error("InterruptedException when waiting for connection", e);
+                }
+                if (i + 1 >= ConnectionConfig.INIT_CONNECT_MAX) {
+                    messageView.messageWithDefaultTitle("Cannot connect to server. Check your Internet connection please.");
+                    return;
                 }
             }
             if (conf.isNewRepo()) {
@@ -147,8 +154,8 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
             this.fileEditorManagerListener = new MyFileOpenCloseListener(this);
             this.project.getMessageBus().connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER,
                    this.fileEditorManagerListener);
-            this.typedActionHandler = new MyTypedActionHandler(this);
-            this.typedActionHandler.setOldHandler(TypedAction.getInstance().setupRawHandler(typedActionHandler));
+//            this.typedActionHandler = new MyTypedActionHandler(this);
+//            this.typedActionHandler.setOldHandler(TypedAction.getInstance().setupRawHandler(typedActionHandler));
 
             collaborationInfoView.displayConnSuccess();
             log.info("localUser {0}", otClient.getLocalUser().toString());
@@ -179,6 +186,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         throw new UnsupportedOperationException();
     }
 
+    @Deprecated
     public void onLocalKeyPressed(VirtualFile file, char charTyped) {
         this.openedFilePresenters.get(getProjectRelativePath(file, project))
                 .acquireSemaphore();
@@ -216,6 +224,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
             localFilePresenter.setOtClientCoFile(clientCoFile);
             localFilePresenter.setLocalRepositoryPresenter(this);
             this.openedFilePresenters.put(fileRelativePath, localFilePresenter);
+            IdeEventQueue.getInstance().addDispatcher(new MyAllKeyListener(localFilePresenter), null);
         });
     }
 
