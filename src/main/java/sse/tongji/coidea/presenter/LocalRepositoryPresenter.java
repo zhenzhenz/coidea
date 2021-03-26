@@ -1,6 +1,5 @@
 package sse.tongji.coidea.presenter;
 
-import com.intellij.ide.IdeEventQueue;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.application.ApplicationManager;
@@ -27,7 +26,6 @@ import dev.mtage.eyjaot.core.dal.DalPolicySettings;
 import org.apache.commons.collections4.CollectionUtils;
 import sse.tongji.coidea.config.CoIDEAUIString;
 import sse.tongji.coidea.config.ConnectionConfig;
-import sse.tongji.coidea.listener.MyAllKeyListener;
 import sse.tongji.coidea.listener.MyFileOpenCloseListener;
 import sse.tongji.coidea.listener.MyRepositoryListener;
 import sse.tongji.coidea.util.CoIDEAFilePathUtil;

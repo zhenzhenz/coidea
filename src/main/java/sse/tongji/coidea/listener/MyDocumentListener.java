@@ -1,6 +1,5 @@
 package sse.tongji.coidea.listener;
 
-import client.DocumentEditor;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.DocumentListener;
 import dev.mtage.eyjaot.client.inter.util.MyLogger;
@@ -31,7 +30,7 @@ public class MyDocumentListener implements DocumentListener {
     @Override
     public void beforeDocumentChange(@NotNull DocumentEvent event) {
         System.out.println("beforeDocumentChange");
-        if(DocumentEditor.isRemotePlaying.get()){
+        if (isRemotePlaying.get()) {
             System.out.println("isRemotePlaying");
             return;
         }

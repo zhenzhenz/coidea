@@ -1,20 +1,8 @@
 package sse.tongji.coidea.listener;
 
-import client.CoServiceStatusEnum;
-import client.CollaborationService;
-import client.DocumentEditor;
-import client.FileClient;
-import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.editor.actionSystem.TypedAction;
-import com.intellij.openapi.editor.actionSystem.TypedActionHandler;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import entity.EclipseDocEditorFactory;
-import listeners.MyDocumentListener;
-import listeners.MyTypedActionHandler;
 import org.jetbrains.annotations.NotNull;
 import sse.tongji.coidea.presenter.LocalRepositoryPresenter;
 
