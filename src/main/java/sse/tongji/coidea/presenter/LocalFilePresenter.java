@@ -1,5 +1,6 @@
 package sse.tongji.coidea.presenter;
 
+import com.intellij.ide.IdeEventQueue;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
@@ -15,6 +16,7 @@ import dev.mtage.eyjaot.core.CoUser;
 import dev.mtage.eyjaot.core.operation.SimpleDeleteTextOperation;
 import dev.mtage.eyjaot.core.operation.SimpleInsertTextOperation;
 import lombok.Setter;
+import sse.tongji.coidea.listener.MyAllKeyListener;
 import sse.tongji.coidea.listener.MyDocumentListener;
 import sse.tongji.coidea.util.CoIDEAFilePathUtil;
 
@@ -33,6 +35,7 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
     private VirtualFile virtualFile;
 
     private MyDocumentListener myDocumentListener;
+    private MyAllKeyListener myAllKeyListener;
     @Setter
     private LocalRepositoryPresenter localRepositoryPresenter;
 
@@ -44,6 +47,8 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
         this.virtualFile = virtualFile;
         this.myDocumentListener = new MyDocumentListener(this);
         FileDocumentManager.getInstance().getDocument(virtualFile).addDocumentListener(this.myDocumentListener);
+        this.myAllKeyListener = new MyAllKeyListener(this);
+        IdeEventQueue.getInstance().addDispatcher(myAllKeyListener, null);
     }
 
     public boolean tryAcquireSemaphore(long timeOut, TimeUnit timeUnit) throws InterruptedException {
@@ -67,6 +72,7 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
     @Override
     public void close() {
         getDocument().removeDocumentListener(myDocumentListener);
+        IdeEventQueue.getInstance().removeDispatcher(myAllKeyListener);
     }
 
     @Override

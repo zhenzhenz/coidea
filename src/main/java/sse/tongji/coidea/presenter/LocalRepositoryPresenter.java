@@ -224,7 +224,6 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
             localFilePresenter.setOtClientCoFile(clientCoFile);
             localFilePresenter.setLocalRepositoryPresenter(this);
             this.openedFilePresenters.put(fileRelativePath, localFilePresenter);
-            IdeEventQueue.getInstance().addDispatcher(new MyAllKeyListener(localFilePresenter), null);
         });
     }
 
