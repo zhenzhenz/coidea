@@ -6,8 +6,10 @@ import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import org.jetbrains.annotations.NotNull;
+import sse.tongji.coidea.presenter.LocalRepositoryPresenter;
 
-public class SimpleWindowViewFactory implements ToolWindowFactory {
+public class CollaborationViewFactory implements ToolWindowFactory {
+    private LocalRepositoryPresenter localRepositoryPresenter;
 
     /**
      * Create the tool window content.
@@ -16,10 +18,12 @@ public class SimpleWindowViewFactory implements ToolWindowFactory {
      * @param toolWindow current tool window
      */
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        SimpleWindow myToolWindow = new SimpleWindow(toolWindow);
+        CollaborationPanel collaborationPanel = new CollaborationPanel(toolWindow);
         ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
-        Content content = contentFactory.createContent(myToolWindow.getContent(), "", false);
+        Content content = contentFactory.createContent(collaborationPanel.getContent(), "", false);
         toolWindow.getContentManager().addContent(content);
+        localRepositoryPresenter = LocalRepositoryPresenter.fromProject(collaborationPanel, collaborationPanel, project);
+        collaborationPanel.setLocalRepositoryPresenter(localRepositoryPresenter);
     }
 
 }

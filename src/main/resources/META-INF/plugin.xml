@@ -16,7 +16,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
         <toolWindow id="Co IDEA" secondary="true" icon="AllIcons.General.Modified" anchor="right"
-                    factoryClass="sse.tongji.coidea.view.SimpleWindowViewFactory"/>
+                    factoryClass="sse.tongji.coidea.view.CollaborationViewFactory"/>
     </extensions>
 
     <actions>

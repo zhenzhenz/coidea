@@ -1,20 +1,23 @@
 package sse.tongji.coidea.view;
 
+import lombok.Getter;
+
 import javax.swing.*;
 
-public class SimpleDialog extends JDialog {
+@SuppressWarnings("jol")
+@Getter
+public class ConfigureDialog extends JDialog {
     private JPanel contentPane;
     private JPanel controlBlock;
     private JPanel optionalBlock;
     private JCheckBox isDALOpen;
     private JCheckBox isFieldsLocked;
-    private JTextField textField1;
+    private JTextField lockDepthField;
     private JCheckBox isMethodsLocked;
     private JLabel lockDepth;
-    private JTextField serverAddress;
-    private JTextField userName;
-    private JTextField repoId;
-    private JButton connectServerButton;
+    private JTextField serverAddressTextField;
+    private JTextField userNameTextField;
+    private JTextField repoIdTextField;
     private JRadioButton createRepoOption;
     private JRadioButton joinRepoOption;
     private JLabel serverAddressLabel;
@@ -23,6 +26,9 @@ public class SimpleDialog extends JDialog {
     private JPanel selectBlock;
 
     public JPanel getContent() {
+        ButtonGroup btnGroup = new ButtonGroup();
+        btnGroup.add(createRepoOption);
+        btnGroup.add(joinRepoOption);
         return contentPane;
     }
 

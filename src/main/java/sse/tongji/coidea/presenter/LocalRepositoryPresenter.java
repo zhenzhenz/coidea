@@ -31,6 +31,7 @@ import sse.tongji.coidea.listener.MyRepositoryListener;
 import sse.tongji.coidea.util.CoIDEAFilePathUtil;
 import sse.tongji.coidea.view.*;
 
+import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -72,7 +73,16 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         this.project = project;
     }
 
+    public LocalRepositoryPresenter(IBasicCollaborationInfoView collaborationInfoView, INotificationView notificationView,
+                                    IRepositoryEditor repositoryView) {
+        super(collaborationInfoView, notificationView, repositoryView);
+    }
 
+    /**
+     * 构建简单的通知View
+     * @param project
+     * @return
+     */
     public static LocalRepositoryPresenter fromProject(Project project) {
         if (projectIdPresenterMap.containsKey(project.getBasePath())) {
             return projectIdPresenterMap.get(project.getBasePath());
@@ -85,6 +95,22 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         return presenter;
     }
 
+    public static LocalRepositoryPresenter fromProject(IBasicCollaborationInfoView collaborationInfoView,
+                                                       INotificationView notificationView,
+                                                       Project project) {
+        if (projectIdPresenterMap.containsKey(project.getBasePath())) {
+            return projectIdPresenterMap.get(project.getBasePath());
+        }
+        LocalRepositoryPresenter presenter = new LocalRepositoryPresenter(new ConnConfigurationDialog(project),
+                collaborationInfoView, notificationView, new RepositoryEditorImpl(project), project);
+        projectIdPresenterMap.put(project.getBasePath(), presenter);
+        return presenter;
+    }
+
+    /**
+     * 菜单栏按下connect
+     * @param e
+     */
     public void onConnectClicked(AnActionEvent e) {
         this.project = e.getData(PlatformDataKeys.PROJECT);
         if (project == null) {
@@ -95,6 +121,20 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         if (Objects.nonNull(this.connConfig) && Objects.nonNull(this.connConfig.getUserName())) {
             connectAndSync(this.connConfig);
 //            e.getPresentation().setEnabled(false);
+        }
+    }
+
+    /**
+     * 侧边控制面板按下
+     * @param e
+     */
+    public void onConnectClicked(ActionEvent e) {
+        ConfigureDialogWrapper connConfigureView = new ConfigureDialogWrapper();
+        if (connConfigureView.showAndGet()) {
+            this.connConfigureView = connConfigureView;
+            ConnConfigurationInput conf = this.connConfigureView.readConfigurationInput();
+            this.connConfigureView.close();
+            connectAndSync(conf);
         }
     }
 
@@ -125,10 +165,10 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
                     byte[] repoData = repositoryView.readDefaultProjectAllData();
                     otClient.newRepo(conf.getRepoId(), conf.getUserName(), repoData,
                             DalPolicySettings.builder()
-                                    .isDalOpen(conf.isOpenDal())
-                                    .deepOfLocking(conf.getDepthOfLocking())
-                                    .isLockingFields(conf.isLockFields())
-                                    .isLockingMethods(conf.isLockMethods())
+//                                    .isDalOpen(conf.isOpenDal())
+//                                    .deepOfLocking(conf.getDepthOfLocking())
+//                                    .isLockingFields(conf.isLockFields())
+//                                    .isLockingMethods(conf.isLockMethods())
                                     .build()
                             , this);
                     this.repositoryListener = new MyRepositoryListener(this);
