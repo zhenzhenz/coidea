@@ -18,7 +18,8 @@ public class CollaborationViewFactory implements ToolWindowFactory {
      * @param toolWindow current tool window
      */
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        CollaborationPanel collaborationPanel = new CollaborationPanel(toolWindow);
+        SimpleNotifyInfoView simpleNotifyInfoView = new SimpleNotifyInfoView(project);
+        CollaborationPanel collaborationPanel = new CollaborationPanel(toolWindow, simpleNotifyInfoView);
         ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
         Content content = contentFactory.createContent(collaborationPanel.getContent(), "", false);
         toolWindow.getContentManager().addContent(content);

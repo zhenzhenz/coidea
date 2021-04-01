@@ -17,6 +17,8 @@ public class CollaborationPanel implements INotificationView, IBasicCollaboratio
     @Setter
     private LocalRepositoryPresenter localRepositoryPresenter;
 
+    private SimpleNotifyInfoView simpleNotifyInfoView;
+
     private JButton hideToolWindowButton;
     private JPanel myToolWindowContent;
     private JPanel controlBlock;
@@ -36,7 +38,8 @@ public class CollaborationPanel implements INotificationView, IBasicCollaboratio
 
     public CollaborationPanel(){}
 
-    public CollaborationPanel(ToolWindow toolWindow) {
+    public CollaborationPanel(ToolWindow toolWindow, SimpleNotifyInfoView simpleNotifyInfoView) {
+        this.simpleNotifyInfoView = simpleNotifyInfoView;
         hideToolWindowButton.addActionListener(e -> toolWindow.hide(null));
         connectServerButton.addActionListener(e -> {
             localRepositoryPresenter.onConnectDisconnectClicked(e);
@@ -64,7 +67,8 @@ public class CollaborationPanel implements INotificationView, IBasicCollaboratio
     @Override
     public void displayConnErr(String errMsg) {
         updateUISynchronously(() -> {
-            sysNotify("Error occurs: " + errMsg);
+//            sysNotify("Error occurs: " + errMsg);
+            simpleNotifyInfoView.displayConnErr(errMsg);
         });
     }
 
@@ -72,7 +76,7 @@ public class CollaborationPanel implements INotificationView, IBasicCollaboratio
     public void displayConnSuccess() {
         updateUISynchronously(() -> {
             connectServerButton.setText(CoIDEAUIString.DISCONNECT);
-            sysNotify("Connected");
+            simpleNotifyInfoView.displayConnSuccess();
         });
     }
 
@@ -80,7 +84,7 @@ public class CollaborationPanel implements INotificationView, IBasicCollaboratio
     public void displayConnBroken(String msg) {
         updateUISynchronously(() -> {
             connectServerButton.setText(CoIDEAUIString.CONNECT);
-            sysNotify("The connection has broken");
+            simpleNotifyInfoView.displayConnBroken(msg);
         });
     }
 
@@ -111,10 +115,7 @@ public class CollaborationPanel implements INotificationView, IBasicCollaboratio
 
     @Override
     public void sysNotify(String msg) {
-        updateUISynchronously(() -> {
-            DefaultListModel<String> model = (DefaultListModel<String>) this.notificationList.getModel();
-            model.addElement("[SYSTEM] " + DateUtil.getCurrentSimpleTime() + msg);
-        });
+        simpleNotifyInfoView.sysNotify(msg);
     }
 
     private synchronized void updateUISynchronously(Runnable runnable) {
