@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import sse.tongji.coidea.config.CoIDEAUIString;
 
 import javax.swing.*;
+import java.util.Random;
 
 
 /**
@@ -27,6 +28,8 @@ public class ConfigureDialogWrapper extends DialogWrapper implements IConnConfig
     protected JComponent createCenterPanel() {
         this.configureDialog = new ConfigureDialog();
         setOKButtonText(CoIDEAUIString.CONNECT);
+        this.configureDialog.getRepoIdTextField().setText(CoIDEAUIString.RANDOM_REPO_PREFIX + new Random().nextInt(1000));
+        this.configureDialog.getUserNameTextField().setText(CoIDEAUIString.DEFAULT_USERNAME);
         return this.configureDialog.getContent();
     }
 

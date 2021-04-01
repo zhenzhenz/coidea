@@ -6,6 +6,7 @@ import dev.mtage.eyjaot.client.inter.view.IBasicCollaborationInfoView;
 import dev.mtage.eyjaot.client.inter.view.INotificationView;
 import dev.mtage.eyjaot.core.CoUser;
 import lombok.Setter;
+import sse.tongji.coidea.config.CoIDEAUIString;
 import sse.tongji.coidea.presenter.LocalRepositoryPresenter;
 
 import javax.swing.*;
@@ -38,11 +39,7 @@ public class CollaborationPanel implements INotificationView, IBasicCollaboratio
     public CollaborationPanel(ToolWindow toolWindow) {
         hideToolWindowButton.addActionListener(e -> toolWindow.hide(null));
         connectServerButton.addActionListener(e -> {
-            sysNotify("test");
-//            if (new SimpleDialogWrapper().showAndGet()) {
-//                // user pressed OK
-//            }
-            localRepositoryPresenter.onConnectClicked(e);
+            localRepositoryPresenter.onConnectDisconnectClicked(e);
         });
     }
 
@@ -66,27 +63,42 @@ public class CollaborationPanel implements INotificationView, IBasicCollaboratio
 
     @Override
     public void displayConnErr(String errMsg) {
-
+        updateUISynchronously(() -> {
+            sysNotify("Error occurs: " + errMsg);
+        });
     }
 
     @Override
     public void displayConnSuccess() {
-        connectServerButton.setText("Disable");
+        updateUISynchronously(() -> {
+            connectServerButton.setText(CoIDEAUIString.DISCONNECT);
+            sysNotify("Connected");
+        });
     }
 
     @Override
     public void displayConnBroken(String msg) {
-
+        updateUISynchronously(() -> {
+            connectServerButton.setText(CoIDEAUIString.CONNECT);
+            sysNotify("The connection has broken");
+        });
     }
 
     @Override
     public void displayCollaborators(Collection<CoUser> coUsers) {
-
+        updateUISynchronously(() -> {
+            DefaultListModel<String> model = (DefaultListModel<String>) this.collaboratorList.getModel();
+            model.clear();
+            coUsers.forEach(u -> model.addElement(u.getUserName()));
+        });
     }
 
     @Override
     public void removeDisplayCollaborator(CoUser coUser) {
-
+        updateUISynchronously(() -> {
+            DefaultListModel<String> model = (DefaultListModel<String>) this.collaboratorList.getModel();
+            model.removeElement(coUser.getUserName());
+        });
     }
 
     @Override

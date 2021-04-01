@@ -10,5 +10,8 @@ public class CoIDEAUIString {
     public static final String WS_SERVER_PREFIX = "ws://";
     public static final String DEFAULT_SERVER_ADDR = "mtage.top:7889/ws/ot";
     public static final String CONNECT = "Connect";
+    public static final String DISCONNECT = "Disconnect";
     public static final String CONFIGURE_DIALOG_TITLE = "Connect to CoIDEA Server";
+    public static final String RANDOM_REPO_PREFIX = "repo-test";
+    public static final String DEFAULT_USERNAME = "CoIDEA User";
 }
