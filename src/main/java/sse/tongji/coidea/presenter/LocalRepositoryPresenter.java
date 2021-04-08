@@ -125,7 +125,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
      * 侧边控制面板按下
      * @param e
      */
-    public void onConnectDisconnectClicked(ActionEvent e) {
+    public void onConnectDisconnectClicked(AnActionEvent e) {
         if (Objects.isNull(this.otClient) || !this.otClient.isConnected()) {
             ConfigureDialogWrapper connConfigureView = new ConfigureDialogWrapper();
             if (connConfigureView.showAndGet()) {

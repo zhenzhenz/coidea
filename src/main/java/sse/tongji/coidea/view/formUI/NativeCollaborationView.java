@@ -4,25 +4,115 @@ import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.util.ui.JBUI;
+import dev.mtage.eyjaot.client.inter.view.IBasicCollaborationInfoView;
+import dev.mtage.eyjaot.client.inter.view.INotificationView;
+import dev.mtage.eyjaot.core.CoUser;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
+import sse.tongji.coidea.presenter.LocalRepositoryPresenter;
+import sse.tongji.coidea.view.SimpleNotifyInfoView;
 
 import javax.swing.*;
+import java.util.Collection;
 
-public class NativeCollaborationView extends SimpleToolWindowPanel {
+public class NativeCollaborationView extends SimpleToolWindowPanel implements INotificationView, IBasicCollaborationInfoView {
+    @Setter
+    private LocalRepositoryPresenter localRepositoryPresenter;
+
+    private SimpleNotifyInfoView simpleNotifyInfoView;
 
     private MainContentInterface mainContent;
+    private CollaborationPanel collaborationPanel;
     private TeamPanel teamContent = new TeamPanel();
 
-    public NativeCollaborationView() {
+    private boolean connectEnable = true;
+
+    public NativeCollaborationView(SimpleNotifyInfoView simpleNotifyInfoView) {
         super(true, true);
         setToolbar(createToolbarPanel());
-        directToLoginPage();
+//        directToLoginPage();
+        directToCollaborationPage();
+        this.simpleNotifyInfoView = simpleNotifyInfoView;
+    }
+
+    @Override
+    public void displayUserName(String userName) {
+        updateUISynchronously(() -> {
+            this.collaborationPanel.userNameField.setText(userName);
+        });
+    }
+
+    @Override
+    public void displayRepoId(String repoId) {
+        updateUISynchronously(() -> {
+            this.collaborationPanel.repoIdTextField.setText(repoId);
+        });
+    }
+
+    @Override
+    public void displayConnErr(String errMsg) {
+        updateUISynchronously(() -> {
+//            sysNotify("Error occurs: " + errMsg);
+            simpleNotifyInfoView.displayConnErr(errMsg);
+        });
+    }
+
+    @Override
+    public void displayConnSuccess() {
+        updateUISynchronously(() -> {
+//            connectServerButton.setText(CoIDEAUIString.DISCONNECT);
+            this.connectEnable = false;
+            simpleNotifyInfoView.displayConnSuccess();
+        });
+    }
+
+    @Override
+    public void displayConnBroken(String msg) {
+        updateUISynchronously(() -> {
+//            connectServerButton.setText(CoIDEAUIString.CONNECT);
+            this.connectEnable = true;
+            simpleNotifyInfoView.displayConnBroken(msg);
+        });
+    }
+
+    @Override
+    public void displayCollaborators(Collection<CoUser> coUsers) {
+        updateUISynchronously(() -> {
+            DefaultListModel<String> model = (DefaultListModel<String>) this.collaborationPanel.collaboratorList.getModel();
+            model.clear();
+            coUsers.forEach(u -> model.addElement(u.getUserName()));
+        });
+    }
+
+    @Override
+    public void removeDisplayCollaborator(CoUser coUser) {
+        updateUISynchronously(() -> {
+            DefaultListModel<String> model = (DefaultListModel<String>) this.collaborationPanel.collaboratorList.getModel();
+            model.removeElement(coUser.getUserName());
+        });
+    }
+
+    @Override
+    public void addDisplayCollaborator(CoUser coUser) {
+        updateUISynchronously(() -> {
+            DefaultListModel<String> model = (DefaultListModel<String>) this.collaborationPanel.collaboratorList.getModel();
+            model.addElement(coUser.getUserName());
+        });
+    }
+
+    @Override
+    public void sysNotify(String msg) {
+        simpleNotifyInfoView.sysNotify(msg);
+    }
+
+    private synchronized void updateUISynchronously(Runnable runnable) {
+        runnable.run();
     }
 
     private JPanel createToolbarPanel() {
         final DefaultActionGroup group = new DefaultActionGroup();
-        group.add(new UserAction());
-        group.add(new TeamAction());
+//        group.add(new UserAction());
+//        group.add(new TeamAction());
         group.add(new ConnectAction());
         group.add(new DisConnectAction());
 
@@ -60,17 +150,13 @@ public class NativeCollaborationView extends SimpleToolWindowPanel {
         @Override
         public void actionPerformed(@NotNull AnActionEvent e) {
             // <html>No team in your account, please create a new team in team page.</html>
-            // todo: 弹出连接窗
-            if (new ConnectionDialogWrapper().showAndGet()) {
-                // user pressed OK
-                ((CollaborationPanel)mainContent).connectSuccess(true); // 显示连接信息
-            }
+            localRepositoryPresenter.onConnectDisconnectClicked(e);
         }
 
         @Override
         public void update(@NotNull AnActionEvent e) {
             // todo: 设置按钮enable/disable
-            e.getPresentation().setEnabled(true);
+            e.getPresentation().setEnabled(connectEnable);
         }
     }
 
@@ -87,7 +173,7 @@ public class NativeCollaborationView extends SimpleToolWindowPanel {
         @Override
         public void update(@NotNull AnActionEvent e) {
             // todo: 设置按钮enable/disable
-            e.getPresentation().setEnabled(false);
+            e.getPresentation().setEnabled(!connectEnable);
         }
     }
 
@@ -112,10 +198,10 @@ public class NativeCollaborationView extends SimpleToolWindowPanel {
     }
 
     private void directToCollaborationPage(){
-        CollaborationPanel newCp = new CollaborationPanel();
-        newCp.logoutButton.addActionListener(e -> {
-            directToLoginPage();
-        });
-        setMainContent(newCp);
+        this.collaborationPanel = new CollaborationPanel();
+//        newCp.logoutButton.addActionListener(e -> {
+//            directToLoginPage();
+//        });
+        setMainContent(this.collaborationPanel);
     }
 }

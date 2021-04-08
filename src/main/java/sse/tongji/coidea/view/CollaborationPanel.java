@@ -42,7 +42,7 @@ public class CollaborationPanel implements INotificationView, IBasicCollaboratio
         this.simpleNotifyInfoView = simpleNotifyInfoView;
         hideToolWindowButton.addActionListener(e -> toolWindow.hide(null));
         connectServerButton.addActionListener(e -> {
-            localRepositoryPresenter.onConnectDisconnectClicked(e);
+//            localRepositoryPresenter.onConnectDisconnectClicked(e);
         });
     }
 
