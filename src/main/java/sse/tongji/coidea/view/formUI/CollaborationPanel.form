@@ -42,7 +42,7 @@
                 </constraints>
                 <properties>
                   <editable value="false"/>
-                  <text value=""/>
+                  <text value="-"/>
                 </properties>
               </component>
             </children>
@@ -73,7 +73,7 @@
                 </constraints>
                 <properties>
                   <editable value="false"/>
-                  <text value=""/>
+                  <text value="-"/>
                 </properties>
               </component>
             </children>

@@ -136,7 +136,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
             }
         } else {
             onDisconnectClicked();
-            this.collaborationInfoView.displayConnBroken("");
+            this.collaborationInfoView.displayConnBroken("Disconnected");
         }
     }
 

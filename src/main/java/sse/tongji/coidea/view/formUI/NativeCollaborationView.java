@@ -14,6 +14,7 @@ import sse.tongji.coidea.view.SimpleNotifyInfoView;
 
 import javax.swing.*;
 import java.util.Collection;
+import java.util.Collections;
 
 public class NativeCollaborationView extends SimpleToolWindowPanel implements INotificationView, IBasicCollaborationInfoView {
     @Setter
@@ -72,6 +73,8 @@ public class NativeCollaborationView extends SimpleToolWindowPanel implements IN
 //            connectServerButton.setText(CoIDEAUIString.CONNECT);
             this.connectEnable = true;
             simpleNotifyInfoView.displayConnBroken(msg);
+            displayCollaborators(Collections.emptyList());
+            displayRepoId("-");
         });
     }
 
@@ -167,7 +170,7 @@ public class NativeCollaborationView extends SimpleToolWindowPanel implements IN
 
         @Override
         public void actionPerformed(@NotNull AnActionEvent e) {
-            // todo: 断开连接
+            localRepositoryPresenter.onConnectDisconnectClicked(e);
         }
 
         @Override
