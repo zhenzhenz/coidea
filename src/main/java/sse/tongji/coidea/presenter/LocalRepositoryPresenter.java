@@ -125,12 +125,13 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
                     byte[] repoData = repositoryView.readDefaultProjectAllData();
                     otClient.newRepo(conf.getRepoId(), conf.getUserName(), repoData,
                             DalPolicySettings.builder()
-                                    .isDalOpen(conf.isOpenDal())
-                                    .deepOfLocking(conf.getDepthOfLocking())
-                                    .isLockingFields(conf.isLockFields())
-                                    .isLockingMethods(conf.isLockMethods())
+                                    .dalOpen(conf.isOpenDal())
+                                    .fieldDepth(conf.getDepthOfLocking())
+                                    .methodDepth(conf.getDepthOfLocking())
+                                    .depthOpen(conf.isLockFields())
                                     .build()
                             , this);
+                    //TODO 改成自动的从UI获取
                     this.repositoryListener = new MyRepositoryListener(this);
                     MyRepositoryListener.resumeListening();
                     VirtualFileManager.getInstance().addVirtualFileListener(repositoryListener);
@@ -210,6 +211,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
     }
 
     public void onLocalFileOpen(FileEditorManager source, VirtualFile file) {
+        this.otClient.updatePersonalSettings(new CoUser.PersonalSettings(DalPolicySettings.builder().dalOpen(true).depthOpen(true).fieldDepth(1).methodDepth(2).timeoutSecond(10).build()));
         log.info("local file open {0}", file.getPath());
         if (GeneralFileIgnoreUtil.isIgnored(file.getName())) {
             log.info("local file opened and ignored {0}", file.getPath());
