@@ -76,7 +76,9 @@
         <constraints>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
-        <properties/>
+        <properties>
+          <enabled value="true"/>
+        </properties>
         <border type="none" title="Collaboration Information" title-justification="2" title-position="3">
           <font/>
           <title-color color="-4473925"/>

@@ -19,14 +19,14 @@
                     factoryClass="sse.tongji.coidea.view.CollaborationViewFactory"/>
     </extensions>
 
-    <actions>
-        <!-- Add your actions here -->
-        <group id="CoIntelliJIdea.CoIntelliJIdeaMenu" text="CoIDEA" description="CoIntelliJIdea">
-            <add-to-group group-id="MainMenu" anchor="last"  />
-            <action id="CoIntelliJIdea.CoIdea" class="sse.tongji.coidea.action.InitUserAction" text="Link Start"
-                    description="Collaborative real-time editor"/>
-            <action id="CoIntelliJIdea.EditorHandler" class="sse.tongji.coidea.action.DisconnectAction" text="Disconnect"
-                    description="Disconnect from the server"/>
-        </group>
-    </actions>
+<!--    <actions>-->
+<!--        &lt;!&ndash; Add your actions here &ndash;&gt;-->
+<!--        <group id="CoIntelliJIdea.CoIntelliJIdeaMenu" text="CoIDEA" description="CoIntelliJIdea">-->
+<!--            <add-to-group group-id="MainMenu" anchor="last"  />-->
+<!--            <action id="CoIntelliJIdea.CoIdea" class="sse.tongji.coidea.action.InitUserAction" text="Link Start"-->
+<!--                    description="Collaborative real-time editor"/>-->
+<!--            <action id="CoIntelliJIdea.EditorHandler" class="sse.tongji.coidea.action.DisconnectAction" text="Disconnect"-->
+<!--                    description="Disconnect from the server"/>-->
+<!--        </group>-->
+<!--    </actions>-->
 </idea-plugin>
