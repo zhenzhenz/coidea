@@ -1,4 +1,4 @@
-package util;
+package sse.tongji.coidea.util;
 
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
