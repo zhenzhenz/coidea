@@ -37,7 +37,7 @@ public class ASTCoreImpl implements ASTCore {
         originMethod = null;
         int offset = dalUser.editingPosition;
         this.dalUser = dalUser;
-        this.virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByPath(CoIDEAFilePathUtil.getStandardAbsolutePath(dalUser.editingFileName,project.getBasePath()));
+        this.virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByPath(CoIDEAFilePathUtil.getStandardAbsolutePath(dalUser.editingFileName, project.getBasePath()));
         Document document = FileDocumentManager.getInstance().getCachedDocument(virtualFile);
         this.psiFile = PsiFileFactory.getInstance(project).createFileFromText(Language.findLanguageByID("JAVA"), document.getText());
         //找到offset的元素
@@ -109,12 +109,7 @@ public class ASTCoreImpl implements ASTCore {
         List<PsiMethod> result = new ArrayList<>();
         Collection<PsiMethodCallExpression> callMethods = PsiTreeUtil.findChildrenOfType(psiMethod, PsiMethodCallExpression.class);
         for (PsiMethodCallExpression callMethod : callMethods) {
-            PsiMethod findedMethod  = (PsiMethod) callMethod.getMethodExpression().resolve();
-            //如果找到的方法和用户的光标在不同文件中 就忽略
-//            if (!CoIDEAFilePathUtil.getProjectRelativePath(findedMethod.getContainingFile().getVirtualFile(), project)
-//                    .equals(dalUser.editingFileName)) {
-//                continue;
-//            }
+            PsiMethod findedMethod = (PsiMethod) callMethod.getMethodExpression().resolve();
             result.add(findedMethod);
         }
         return result;
@@ -164,7 +159,6 @@ public class ASTCoreImpl implements ASTCore {
 
     private BasicRegion getMethodBasicRegion(PsiMethod psiMethod) {
         String methodName = psiMethod.getNameIdentifier().getText();
-        System.out.println("输出的是什么类型的方法++++" + methodName);
         PsiParameterList methodParameterList = psiMethod.getParameterList();
         //将方法名和方法参数拼接成regionid
         String methodfinalName = buildMethodName(methodName, methodParameterList);

@@ -30,7 +30,7 @@ public class DALAwarenessPrinter {
     private static Collection<RangeHighlighter> highLightList = new ArrayList<>();
     private static Map<String, Color> siteNameToColor = new HashMap<>();
     private final Color colorSharedWriteLock = new Color(208, 32, 144);
-    private final Color colorSharedReadLock = new Color( 181, 230, 29);
+    private final Color colorSharedReadLock = new Color(181, 230, 29);
     private final Color colorWhite = new Color(255, 255, 255);
 
     public DALAwarenessPrinter(Project project) {
@@ -47,38 +47,26 @@ public class DALAwarenessPrinter {
     private void addHighlight() {
         Document document = editor.getDocument();
         if (project != null && editor != null) {
-//            WriteCommandAction.runWriteCommandAction(project, () -> {
-                for (BasicRegion b : BasicRegionList.getBasicRegionList()) {
-                    System.out.println("b的类型！！！" + b.getRegiontype());
-                    int LineStartNumber = 0;
-                    if (b.getStartOffset() < document.getText().length()) {
-                        LineStartNumber = document.getLineNumber(b.getStartOffset());
-                    }
-                    int LineEndNumber = 0;
-                    if (b.getEndOffset() < document.getText().length()) {
-                        LineEndNumber = document.getLineNumber(b.getEndOffset());
-                    }
-                    Color printerColor = getRegionColor(b);
-                    for (int i = LineStartNumber; i <= LineEndNumber; i++) {
-                        int start = document.getLineStartOffset(i);
-                        int end = document.getLineEndOffset(i);
-                        highlightManager.addRangeHighlight(editor, start, end , new TextAttributes(null, printerColor, null, EffectType.BOXED, 0), false, highLightList);
-                    }
-
+            for (BasicRegion b : BasicRegionList.getBasicRegionList()) {
+                if (b.getStartOffset() >= document.getText().length()) {
+                    continue;
                 }
-//            });
+                if (b.getEndOffset() >= document.getText().length()) {
+                    continue;
+                }
+                int lineStartNumber = document.getLineNumber(b.getStartOffset());
+                int lineEndNumber = document.getLineNumber(b.getEndOffset());
+                Color printerColor = getRegionColor(b);
+                highlightManager.addRangeHighlight(editor, document.getLineStartOffset(lineStartNumber), document.getLineEndOffset(lineEndNumber), new TextAttributes(null, printerColor, null, EffectType.BOXED, 0), false, highLightList);
+            }
         }
     }
 
     private void clearHighlight() {
-//        WriteCommandAction.runWriteCommandAction(project, () -> {
-            for (RangeHighlighter h : highLightList) {
-                //System.out.println("删除颜色！" + highLightList.size());
-                highlightManager.removeSegmentHighlighter(editor, h);
-                //System.out.println("删除颜色完成！" + highLightList.size());
-            }
-            highLightList.clear();
-//        });
+        for (RangeHighlighter h : highLightList) {
+            highlightManager.removeSegmentHighlighter(editor, h);
+        }
+        highLightList.clear();
     }
 
 
@@ -98,7 +86,7 @@ public class DALAwarenessPrinter {
             } else if (basicRegion.getLockList().get(0).getLockType() == LockType.AWARENESSLOCK) {
                 return mixColorWithWhite(mixColorWithWhite(regionColor));
             }
-        }  else if (basicRegion.getLockList().size() > 1) {
+        } else if (basicRegion.getLockList().size() > 1) {
             for (Lock lk : basicRegion.getLockList()) {
                 //如果包含working的锁,锁颜色为写锁
                 if (lk.getLockType() == LockType.WORKINGLOCK) {

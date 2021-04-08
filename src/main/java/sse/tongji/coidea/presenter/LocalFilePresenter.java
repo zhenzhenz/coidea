@@ -93,9 +93,9 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
         // DALPart
         dalChangeEditingFile();
         if (event.getOldLength() != 0) {
-            DalCore.doCFDbyUserOperation(getLocalUser().getUserName(), getPath(),OperationType.DELETE, event.getOffset(), event.getOldLength(), getDalPolicySettings());
+            DalCore.doCFDbyUserOperation(getLocalUser().getUserName(), getPath(), OperationType.DELETE, event.getOffset(), event.getOldLength(), getDalPolicySettings());
         } else if (event.getNewLength() != 0) {
-            DalCore.doCFDbyUserOperation(getLocalUser().getUserName(), getPath(),OperationType.INSERT, event.getOffset(), event.getNewLength(), getDalPolicySettings());
+            DalCore.doCFDbyUserOperation(getLocalUser().getUserName(), getPath(), OperationType.INSERT, event.getOffset(), event.getNewLength(), getDalPolicySettings());
         }
         dalAwarenessPrinter.refreshHighlight();
         log.info("本地文档变化处理完成 尝试释放文档编辑锁");
@@ -120,7 +120,7 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
             otClientCoFile.localCaretMove(event.getEditor().getCaretModel().getOffset());
         } else {
             //TODO 提醒这里不能修改文字 并且拒绝任何的修改操作
-            Messages.showInfoMessage("You can't working in this Region", "INFO");
+            Messages.showInfoMessage("You can't work in this Region", "INFO");
         }
         dalAwarenessPrinter.refreshHighlight();
     }
@@ -159,7 +159,7 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
         ApplicationManager.getApplication().invokeAndWait(() -> {
             WriteCommandAction.runWriteCommandAction(project,
                     () -> getDocument().insertString(operation.getPosition(), operation.getContent()));
-            DalCore.doCFDbyUserOperation(coUser.getUserName(), getPath(),OperationType.INSERT, operation.getPosition(), operation.getContent().length(), coUser.getPersonalSettings().getDalPolicySettings());
+            DalCore.doCFDbyUserOperation(coUser.getUserName(), getPath(), OperationType.INSERT, operation.getPosition(), operation.getContent().length(), coUser.getPersonalSettings().getDalPolicySettings());
             dalAwarenessPrinter.refreshHighlight();
             this.myDocumentListener.remotePlayingDone();
         });

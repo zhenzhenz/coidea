@@ -25,7 +25,7 @@ public class DalCore {
 
         //如果dal打开，并且编辑位置和本地编辑位置一致，更新dal锁
         if (setting.isDalOpen() && localPath.equals(editingFileName)) {
-            DalUser userOperation = buildUser(siteName, editingFileName,operationType,editingStartOffset,editingLength,setting);
+            DalUser userOperation = buildUser(siteName, editingFileName, operationType, editingStartOffset, editingLength, setting);
             DalUserGroup.updateUser(userOperation);
             DalUserGroup.removeTimeOutUser();
             CFDOperation.cfdMethod(userOperation);
@@ -33,7 +33,7 @@ public class DalCore {
     }
 
     public static boolean doDalPermissionCheck(String siteName, String editingFileName, OperationType operationType, int editingStartOffset, int editingLength, DalPolicySettings setting) {
-        DalUser userOperation = buildUser(siteName, editingFileName,operationType,editingStartOffset,editingLength,setting);
+        DalUser userOperation = buildUser(siteName, editingFileName, operationType, editingStartOffset, editingLength, setting);
         return CheckPermission.doCheckPermission(userOperation);
     }
 
