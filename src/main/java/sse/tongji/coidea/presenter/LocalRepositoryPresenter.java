@@ -31,13 +31,11 @@ import sse.tongji.coidea.listener.MyRepositoryListener;
 import sse.tongji.coidea.util.CoIDEAFilePathUtil;
 import sse.tongji.coidea.view.*;
 
+import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static sse.tongji.coidea.util.CoIDEAFilePathUtil.getProjectRelativePath;
@@ -72,7 +70,16 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         this.project = project;
     }
 
+    public LocalRepositoryPresenter(IBasicCollaborationInfoView collaborationInfoView, INotificationView notificationView,
+                                    IRepositoryEditor repositoryView) {
+        super(collaborationInfoView, notificationView, repositoryView);
+    }
 
+    /**
+     * 构建简单的通知View
+     * @param project
+     * @return
+     */
     public static LocalRepositoryPresenter fromProject(Project project) {
         if (projectIdPresenterMap.containsKey(project.getBasePath())) {
             return projectIdPresenterMap.get(project.getBasePath());
@@ -85,6 +92,22 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         return presenter;
     }
 
+    public static LocalRepositoryPresenter fromProject(IBasicCollaborationInfoView collaborationInfoView,
+                                                       INotificationView notificationView,
+                                                       Project project) {
+        if (projectIdPresenterMap.containsKey(project.getBasePath())) {
+            return projectIdPresenterMap.get(project.getBasePath());
+        }
+        LocalRepositoryPresenter presenter = new LocalRepositoryPresenter(new ConnConfigurationDialog(project),
+                collaborationInfoView, notificationView, new RepositoryEditorImpl(project), project);
+        projectIdPresenterMap.put(project.getBasePath(), presenter);
+        return presenter;
+    }
+
+    /**
+     * 菜单栏按下connect
+     * @param e
+     */
     public void onConnectClicked(AnActionEvent e) {
         this.project = e.getData(PlatformDataKeys.PROJECT);
         if (project == null) {
@@ -95,6 +118,25 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         if (Objects.nonNull(this.connConfig) && Objects.nonNull(this.connConfig.getUserName())) {
             connectAndSync(this.connConfig);
 //            e.getPresentation().setEnabled(false);
+        }
+    }
+
+    /**
+     * 侧边控制面板按下
+     * @param e
+     */
+    public void onConnectDisconnectClicked(AnActionEvent e) {
+        if (Objects.isNull(this.otClient) || !this.otClient.isConnected()) {
+            ConfigureDialogWrapper connConfigureView = new ConfigureDialogWrapper();
+            if (connConfigureView.showAndGet()) {
+                this.connConfigureView = connConfigureView;
+                ConnConfigurationInput conf = this.connConfigureView.readConfigurationInput();
+                this.connConfigureView.close();
+                connectAndSync(conf);
+            }
+        } else {
+            onDisconnectClicked();
+            this.collaborationInfoView.displayConnBroken("Disconnected");
         }
     }
 
@@ -135,6 +177,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
                     this.repositoryListener = new MyRepositoryListener(this);
                     MyRepositoryListener.resumeListening();
                     VirtualFileManager.getInstance().addVirtualFileListener(repositoryListener);
+                    collaborationInfoView.displayCollaborators(Collections.singleton(otClient.getLocalUser()));
                 } catch (IOException e) {
                     collaborationInfoView.displayConnErr("Error when compressing your repository: " + e.getMessage());
                     log.error("read repo all data IOException", e);
@@ -142,11 +185,6 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
 
             } else {
                 otClient.joinRepo(conf.getRepoId(), conf.getUserName(), this);
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    log.error("InterruptedException", e);
-                }
             }
 
             // 设置全项目监听
@@ -156,6 +194,8 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
 //            this.typedActionHandler = new MyTypedActionHandler(this);
 //            this.typedActionHandler.setOldHandler(TypedAction.getInstance().setupRawHandler(typedActionHandler));
 
+            collaborationInfoView.displayUserName(conf.getUserName());
+            collaborationInfoView.displayRepoId(conf.getRepoId());
             collaborationInfoView.displayConnSuccess();
             log.info("localUser {0}", otClient.getLocalUser().toString());
         } catch (CommonSysException e) {
