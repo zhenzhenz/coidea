@@ -5,31 +5,19 @@ import javax.swing.*;
 public class CollaborationPanel implements MainContentInterface {
     JPanel myToolWindowContent;
 
-    JPanel collaborationInformationPanel;
-    JList<String> collaboratorList;
+    JPanel userPanel;
     JTextField userNameField;
-    JPanel serverPanel;
     JLabel userNameLabel;
-    JPanel usernamePanel;
-    JPanel repoPanel;
     JLabel repoIdLabel;
     JTextField repoIdTextField;
-    private JTabbedPane tabbedPane1;
-    JPanel collaboratorPanel;
+    JTabbedPane tabbedPane1;
+    JList<String> collaboratorList;
 
     public CollaborationPanel(){
         Box vBox = Box.createVerticalBox();
-        vBox.add(usernamePanel);
-        vBox.add(serverPanel);
-//        vBox.add(repoPanel);
-//        vBox.add(noProjectPanel);
-        Box vBox2 = Box.createVerticalBox();
-//        vBox2.add(projectPanel);
-        vBox2.add(tabbedPane1);
-        vBox.add(vBox2);
-//        vBox.add(logoutPanel);
+        vBox.add(userPanel);
+        vBox.add(tabbedPane1);
         myToolWindowContent.add(vBox);
-//        connectSuccess(true);
 
 //        DefaultListModel<String> model = (DefaultListModel<String>) this.collaboratorList.getModel();
 //        model.addElement("asdxcvdfg");
@@ -40,8 +28,4 @@ public class CollaborationPanel implements MainContentInterface {
         return myToolWindowContent;
     }
 
-    public void connectSuccess(boolean isConnect){
-//        noProjectPanel.setVisible(!isConnect);
-        collaborationInformationPanel.setVisible(isConnect);
-    }
 }
