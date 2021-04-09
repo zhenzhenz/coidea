@@ -67,7 +67,7 @@
               </grid>
             </constraints>
             <properties>
-              <editable value="false"/>
+              <editable value="true"/>
               <text value="Your repo ID"/>
             </properties>
           </component>

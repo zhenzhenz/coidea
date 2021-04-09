@@ -1,5 +1,7 @@
 package sse.tongji.coidea.view.formUI;
 
+import com.intellij.openapi.util.IconLoader;
+
 import javax.swing.*;
 
 public class CollaborationPanel implements MainContentInterface {
@@ -12,6 +14,7 @@ public class CollaborationPanel implements MainContentInterface {
     JTextField repoIdTextField;
     JTabbedPane tabbedPane1;
     JList<String> collaboratorList;
+    private JLabel imageLabel;
 
     public CollaborationPanel(){
         Box vBox = Box.createVerticalBox();
@@ -28,4 +31,8 @@ public class CollaborationPanel implements MainContentInterface {
         return myToolWindowContent;
     }
 
+    private void createUIComponents() {
+        Icon icon = IconLoader.getIcon("/coidea_icon.svg", CollaborationPanel.class);
+        imageLabel = new JLabel(icon);
+    }
 }
