@@ -12,18 +12,16 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
-
+import dev.mtage.eyjaot.client.OtClient;
 import dev.mtage.eyjaot.client.entity.ClientCoFile;
-import dev.mtage.eyjaot.client.inter.EditOperationSourceEnum;
 import dev.mtage.eyjaot.client.inter.presenter.GeneralLocalFilePresenter;
 import dev.mtage.eyjaot.client.inter.util.MyLogger;
 import dev.mtage.eyjaot.core.CoUser;
+import dev.mtage.eyjaot.core.action.file.FileContentDeleteAction;
+import dev.mtage.eyjaot.core.action.file.FileContentInsertAction;
 import dev.mtage.eyjaot.core.dal.DalPolicySettings;
-import dev.mtage.eyjaot.core.operation.SimpleDeleteTextOperation;
-import dev.mtage.eyjaot.core.operation.SimpleInsertTextOperation;
+import dev.mtage.eyjaot.core.util.EditOperationSourceEnum;
 import dev.mtage.eyjaot.core.util.RangeSetUtil;
-import jdk.jfr.Event;
-import lombok.Getter;
 import lombok.Setter;
 import sse.tongji.coidea.dal.ASTCoreImpl;
 import sse.tongji.coidea.dal.DalCore;
@@ -61,9 +59,12 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
     private ClientCoFile otClientCoFile;
     private DALAwarenessPrinter dalAwarenessPrinter;
 
-    public LocalFilePresenter(Project project, VirtualFile virtualFile) {
+    private OtClient otClient;
+
+    public LocalFilePresenter(Project project, VirtualFile virtualFile, OtClient otClient) {
         this.project = project;
         this.virtualFile = virtualFile;
+        this.otClient = otClient;
         this.myDocumentListener = new MyDocumentListener(this);
         FileDocumentManager.getInstance().getDocument(virtualFile).addDocumentListener(this.myDocumentListener);
         this.myAllKeyListener = new MyAllKeyListener(this);
@@ -82,10 +83,10 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
     public void onLocalEdit(DocumentEvent event) {
         if (event.getOldLength() != 0) {
             log.info("local delete {0} {1}", event.getOffset(), event.getOldFragment().toString());
-            otClientCoFile.localDelete(event.getOffset(), event.getOffset() + event.getOldLength());
+            otClient.deleteFileContent(otClientCoFile, event.getOffset(), event.getOffset() + event.getOldLength());
         } else if (event.getNewLength() != 0) {
             log.info("local insert {0} {1}", event.getOffset(), event.getOldFragment().toString());
-            otClientCoFile.localInsert(event.getOffset(), event.getNewFragment().toString());
+            otClient.insertFileContent(otClientCoFile, event.getOffset(), event.getNewFragment().toString());
         } else {
             log.error("本地文档变化但未识别处理 {0}", event);
         }
@@ -153,32 +154,34 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
     }
 
     @Override
-    public void onInsert(SimpleInsertTextOperation operation, EditOperationSourceEnum source, CoUser coUser) {
+    public void onInsert(FileContentInsertAction fileContentInsertAction, EditOperationSourceEnum source, CoUser coUser) {
         this.myDocumentListener.remotePlaying();
         log.info("editing userName:{0} dal:{1}", coUser.getUserName(),
                 coUser.getPersonalSettings().getDalPolicySettings());
 
         ApplicationManager.getApplication().invokeAndWait(() -> {
             WriteCommandAction.runWriteCommandAction(project,
-                    () -> getDocument().insertString(operation.getPosition(), operation.getContent()));
-            DalCore.doCFDbyUserOperation(coUser.getUserName(), getPath(), OperationType.INSERT, operation.getPosition(), operation.getContent().length(), coUser.getPersonalSettings().getDalPolicySettings());
+                    () -> getDocument().insertString(fileContentInsertAction.getPosition(), fileContentInsertAction.getContent()));
+            DalCore.doCFDbyUserOperation(coUser.getUserName(), getPath(), OperationType.INSERT,
+                    fileContentInsertAction.getPosition(), fileContentInsertAction.getContent().length(), coUser.getPersonalSettings().getDalPolicySettings());
             dalAwarenessPrinter.refreshHighlight();
             this.myDocumentListener.remotePlayingDone();
         });
     }
 
     @Override
-    public void onDelete(SimpleDeleteTextOperation operation, EditOperationSourceEnum source, CoUser coUser) {
+    public void onDelete(FileContentDeleteAction fileContentDeleteAction, EditOperationSourceEnum source, CoUser coUser) {
         this.myDocumentListener.remotePlaying();
 
         ApplicationManager.getApplication().invokeAndWait(() -> {
             WriteCommandAction.runWriteCommandAction(project, () -> {
-                operation.getDeleteRangeSet().asRanges().forEach(eachRange -> {
+                fileContentDeleteAction.getDeleteRangeSet().asRanges().forEach(eachRange -> {
                     getDocument().deleteString(eachRange.lowerEndpoint(), eachRange.upperEndpoint());
                 });
-                for (Range<Integer> range : operation.getDeleteRangeSet().asRanges()) {
+                for (Range<Integer> range : fileContentDeleteAction.getDeleteRangeSet().asRanges()) {
                     int start = range.lowerEndpoint();
-                    DalCore.doCFDbyUserOperation(coUser.getUserName(), getPath(), OperationType.DELETE, start, RangeSetUtil.lengthOfRange(range), coUser.getPersonalSettings().getDalPolicySettings());
+                    DalCore.doCFDbyUserOperation(coUser.getUserName(), getPath(), OperationType.DELETE, start,
+                            RangeSetUtil.lengthOfRange(range), coUser.getPersonalSettings().getDalPolicySettings());
                 }
                 dalAwarenessPrinter.refreshHighlight();
             });

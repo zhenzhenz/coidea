@@ -15,14 +15,18 @@ import com.intellij.openapi.vfs.VirtualFileManager;
 import dev.mtage.error.CommonSysException;
 import dev.mtage.eyjaot.client.OtClient;
 import dev.mtage.eyjaot.client.entity.ClientCoFile;
+import dev.mtage.eyjaot.client.inter.ILocalFileEditor;
 import dev.mtage.eyjaot.client.inter.presenter.GeneralLocalRepositoryPresenter;
+import dev.mtage.eyjaot.client.inter.presenter.GeneralUnopenedFilePresenter;
 import dev.mtage.eyjaot.client.inter.presenter.IFilePresenter;
 import dev.mtage.eyjaot.client.inter.util.FilePathUtil;
 import dev.mtage.eyjaot.client.inter.util.GeneralFileIgnoreUtil;
 import dev.mtage.eyjaot.client.inter.util.MyLogger;
 import dev.mtage.eyjaot.client.inter.view.*;
 import dev.mtage.eyjaot.core.CoUser;
+import dev.mtage.eyjaot.core.action.file.FileContentInsertAction;
 import dev.mtage.eyjaot.core.dal.DalPolicySettings;
+import dev.mtage.eyjaot.core.util.EditOperationSourceEnum;
 import org.apache.commons.collections4.CollectionUtils;
 import sse.tongji.coidea.config.CoIDEAUIString;
 import sse.tongji.coidea.config.ConnectionConfig;
@@ -31,9 +35,9 @@ import sse.tongji.coidea.listener.MyRepositoryListener;
 import sse.tongji.coidea.util.CoIDEAFilePathUtil;
 import sse.tongji.coidea.view.*;
 
-import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -64,14 +68,14 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
 
 
     public LocalRepositoryPresenter(IConnConfigureView connConfigureView, IBasicCollaborationInfoView collaborationInfoView,
-                                    INotificationView notificationView, IRepositoryEditor repositoryView,
+                                    INotificationView notificationView, IRepositoryEditorView repositoryView,
                                     Project project) {
         super(connConfigureView, collaborationInfoView, notificationView, repositoryView);
         this.project = project;
     }
 
     public LocalRepositoryPresenter(IBasicCollaborationInfoView collaborationInfoView, INotificationView notificationView,
-                                    IRepositoryEditor repositoryView) {
+                                    IRepositoryEditorView repositoryView) {
         super(collaborationInfoView, notificationView, repositoryView);
     }
 
@@ -138,6 +142,34 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
             onDisconnectClicked();
             this.collaborationInfoView.displayConnBroken("Disconnected");
         }
+    }
+
+    public class LocalUnOpenFilePresenter extends GeneralUnopenedFilePresenter {
+
+        public LocalUnOpenFilePresenter(String path) {
+            super(path);
+        }
+
+        @Override
+        protected Path getAbsolutePath() {
+//            log.info("{0} absolutePath:{1}", getPath(), Paths.get(CoEclipseFilePathUtil.getStandardAbsolutePath(getPath(), repositoryView.getDefaultProjectPath())));
+            return Paths.get(CoIDEAFilePathUtil.getStandardAbsolutePath(getPath(), repositoryView.getDefaultProjectPath()));
+        }
+
+        @Override
+        public void onInsert(FileContentInsertAction operation, EditOperationSourceEnum source, CoUser coUser) throws IOException {
+            log.info("本地未打开的文件插入 {0}", operation.getContent());
+            super.onInsert(operation, source, coUser);
+        }
+    }
+
+    @Override
+    public ILocalFileEditor getLocalFileEditor(String path) {
+        if (openedFilePresenters.containsKey(path)) {
+            return openedFilePresenters.get(path);
+        }
+        log.info("构建未打开文件 {0} 的presenter", path);
+        return new LocalUnOpenFilePresenter(path);
     }
 
 
@@ -238,6 +270,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
     }
 
     public void onLocalFileCreate(VirtualFile file) {
+        acquireSemaphore();
         String projectRelativePath = FilePathUtil.getProjectRelativePath(file.getPath(),
                 repositoryView.getDefaultProjectPath(), repositoryView.getDefaultProjectName());
         if (Files.isDirectory(Paths.get(file.getPath()))) {
@@ -248,6 +281,15 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
             otClient.createFile(projectRelativePath, projectRelativePath, document.getText());
             log.info("send create file request {0} name: {1}", projectRelativePath, file.getName());
         });
+        releaseSemaphore();
+    }
+
+    @Override
+    public void onDeleteFile(String path, CoUser user) throws IOException {
+        // TODO 对项目级别锁的获取可以考虑放在inter @周泓光
+        acquireSemaphore();
+        super.onDeleteFile(path, user);
+        releaseSemaphore();
     }
 
     public void onLocalFileOpen(FileEditorManager source, VirtualFile file) {
@@ -257,7 +299,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
             log.info("local file opened and ignored {0}", file.getPath());
             return;
         }
-        LocalFilePresenter localFilePresenter = new LocalFilePresenter(project, file);
+        LocalFilePresenter localFilePresenter = new LocalFilePresenter(project, file, otClient);
         String fileRelativePath = getProjectRelativePath(file, project);
         ApplicationManager.getApplication().invokeLater(() -> {
             ClientCoFile clientCoFile = otClient.openFile(fileRelativePath, file.getName(), localFilePresenter);
@@ -314,21 +356,21 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
     }
 
     @Override
-    public void onCreateDir(String path, CoUser user) {
+    public void onCreateDir(String path, CoUser user) throws IOException {
         MyRepositoryListener.pauseListening();
         super.onCreateDir(path, user);
         MyRepositoryListener.resumeListening();
     }
 
     @Override
-    public void onCreateFile(String path, String content, CoUser user) {
+    public void onCreateFile(String path, String content, CoUser user) throws IOException {
         MyRepositoryListener.pauseListening();
         super.onCreateFile(path, content, user);
         MyRepositoryListener.resumeListening();
     }
 
     @Override
-    public void onDeleteDir(String path, CoUser user) {
+    public void onDeleteDir(String path, CoUser user) throws IOException {
         MyRepositoryListener.pauseListening();
         super.onDeleteDir(path, user);
         MyRepositoryListener.resumeListening();
