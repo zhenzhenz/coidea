@@ -17,6 +17,10 @@
         <!-- Add your extensions here -->
         <toolWindow id="Co IDEA" secondary="true" icon="AllIcons.General.Modified" anchor="right"
                     factoryClass="sse.tongji.coidea.view.CollaborationViewFactory"/>
+        <applicationService serviceImplementation="sse.tongji.coidea.config.AppSettingsState"/>
+        <applicationConfigurable parentId="tools" instance="sse.tongji.coidea.config.AppSettingsConfigurable"
+                                 id="sse.tongji.coidea.config.AppSettingsConfigurable"
+                                 displayName="CoIDEA: App Settings"/>
     </extensions>
 
 <!--    <actions>-->
