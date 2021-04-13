@@ -158,6 +158,8 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
     @Override
     public void onInsert(SimpleInsertTextOperation operation, EditOperationSourceEnum source, CoUser coUser) {
         this.myDocumentListener.remotePlaying();
+        log.info("editing userName:{0} dal:{1}", coUser.getUserName(),
+                coUser.getPersonalSettings().getDalPolicySettings());
 
         ApplicationManager.getApplication().invokeAndWait(() -> {
             WriteCommandAction.runWriteCommandAction(project,

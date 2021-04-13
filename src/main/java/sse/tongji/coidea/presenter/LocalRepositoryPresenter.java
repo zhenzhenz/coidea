@@ -24,6 +24,7 @@ import dev.mtage.eyjaot.client.inter.view.*;
 import dev.mtage.eyjaot.core.CoUser;
 import dev.mtage.eyjaot.core.dal.DalPolicySettings;
 import org.apache.commons.collections4.CollectionUtils;
+import sse.tongji.coidea.config.AppSettingsState;
 import sse.tongji.coidea.config.CoIDEAUIString;
 import sse.tongji.coidea.config.ConnectionConfig;
 import sse.tongji.coidea.listener.MyFileOpenCloseListener;
@@ -31,13 +32,11 @@ import sse.tongji.coidea.listener.MyRepositoryListener;
 import sse.tongji.coidea.util.CoIDEAFilePathUtil;
 import sse.tongji.coidea.view.*;
 
+import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static sse.tongji.coidea.util.CoIDEAFilePathUtil.getProjectRelativePath;
@@ -72,7 +71,16 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         this.project = project;
     }
 
+    public LocalRepositoryPresenter(IBasicCollaborationInfoView collaborationInfoView, INotificationView notificationView,
+                                    IRepositoryEditor repositoryView) {
+        super(collaborationInfoView, notificationView, repositoryView);
+    }
 
+    /**
+     * 构建简单的通知View
+     * @param project
+     * @return
+     */
     public static LocalRepositoryPresenter fromProject(Project project) {
         if (projectIdPresenterMap.containsKey(project.getBasePath())) {
             return projectIdPresenterMap.get(project.getBasePath());
@@ -85,6 +93,22 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         return presenter;
     }
 
+    public static LocalRepositoryPresenter fromProject(IBasicCollaborationInfoView collaborationInfoView,
+                                                       INotificationView notificationView,
+                                                       Project project) {
+        if (projectIdPresenterMap.containsKey(project.getBasePath())) {
+            return projectIdPresenterMap.get(project.getBasePath());
+        }
+        LocalRepositoryPresenter presenter = new LocalRepositoryPresenter(new ConnConfigurationDialog(project),
+                collaborationInfoView, notificationView, new RepositoryEditorImpl(project), project);
+        projectIdPresenterMap.put(project.getBasePath(), presenter);
+        return presenter;
+    }
+
+    /**
+     * 菜单栏按下connect
+     * @param e
+     */
     public void onConnectClicked(AnActionEvent e) {
         this.project = e.getData(PlatformDataKeys.PROJECT);
         if (project == null) {
@@ -95,6 +119,25 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         if (Objects.nonNull(this.connConfig) && Objects.nonNull(this.connConfig.getUserName())) {
             connectAndSync(this.connConfig);
 //            e.getPresentation().setEnabled(false);
+        }
+    }
+
+    /**
+     * 侧边控制面板按下
+     * @param e
+     */
+    public void onConnectDisconnectClicked(AnActionEvent e) {
+        if (Objects.isNull(this.otClient) || !this.otClient.isConnected()) {
+            ConfigureDialogWrapper connConfigureView = new ConfigureDialogWrapper();
+            if (connConfigureView.showAndGet()) {
+                this.connConfigureView = connConfigureView;
+                ConnConfigurationInput conf = this.connConfigureView.readConfigurationInput();
+                this.connConfigureView.close();
+                connectAndSync(conf);
+            }
+        } else {
+            onDisconnectClicked();
+            this.collaborationInfoView.displayConnBroken("Disconnected");
         }
     }
 
@@ -135,6 +178,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
                     this.repositoryListener = new MyRepositoryListener(this);
                     MyRepositoryListener.resumeListening();
                     VirtualFileManager.getInstance().addVirtualFileListener(repositoryListener);
+                    collaborationInfoView.displayCollaborators(Collections.singleton(otClient.getLocalUser()));
                 } catch (IOException e) {
                     collaborationInfoView.displayConnErr("Error when compressing your repository: " + e.getMessage());
                     log.error("read repo all data IOException", e);
@@ -142,11 +186,6 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
 
             } else {
                 otClient.joinRepo(conf.getRepoId(), conf.getUserName(), this);
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    log.error("InterruptedException", e);
-                }
             }
 
             // 设置全项目监听
@@ -156,8 +195,21 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
 //            this.typedActionHandler = new MyTypedActionHandler(this);
 //            this.typedActionHandler.setOldHandler(TypedAction.getInstance().setupRawHandler(typedActionHandler));
 
+            collaborationInfoView.displayUserName(conf.getUserName());
+            collaborationInfoView.displayRepoId(conf.getRepoId());
             collaborationInfoView.displayConnSuccess();
             log.info("localUser {0}", otClient.getLocalUser().toString());
+
+            AppSettingsState settingsState = AppSettingsState.getInstance();
+            log.info("读取DAL用户自定义配置 :open={0} depthOpen={1} timeOut={2} depth={3}/{4}",
+                    settingsState.isDalOpen(), settingsState.isDepthOpen(), settingsState.getTimeout(), settingsState.getMethodDepth(), settingsState.getFieldDepth());
+            otClient.updatePersonalSettings(new CoUser.PersonalSettings(DalPolicySettings.builder()
+                    .dalOpen(settingsState.isDalOpen())
+                    .depthOpen(settingsState.isDepthOpen())
+                    .methodDepth(settingsState.getMethodDepth())
+                    .fieldDepth(settingsState.getFieldDepth())
+                    .timeoutSecond(settingsState.getTimeout())
+                    .build()));
         } catch (CommonSysException e) {
             collaborationInfoView.displayConnErr(e.getMessage());
             log.error("connect error", e);
@@ -180,6 +232,12 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         openedFilePresenters.clear();
     }
 
+    /**
+     * 不可用
+     * @see LocalRepositoryPresenter#onLocalFileOpen(FileEditorManager, VirtualFile)
+     * @param absolutePath
+     * @param fileName
+     */
     @Override
     public void onLocalFileOpen(String absolutePath, String fileName) {
         throw new UnsupportedOperationException();
@@ -211,7 +269,6 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
     }
 
     public void onLocalFileOpen(FileEditorManager source, VirtualFile file) {
-        this.otClient.updatePersonalSettings(new CoUser.PersonalSettings(DalPolicySettings.builder().dalOpen(true).depthOpen(true).fieldDepth(1).methodDepth(2).timeoutSecond(10).build()));
         log.info("local file open {0}", file.getPath());
         if (GeneralFileIgnoreUtil.isIgnored(file.getName())) {
             log.info("local file opened and ignored {0}", file.getPath());
