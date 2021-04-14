@@ -28,6 +28,7 @@ import dev.mtage.eyjaot.core.action.file.FileContentInsertAction;
 import dev.mtage.eyjaot.core.dal.DalPolicySettings;
 import dev.mtage.eyjaot.core.util.EditOperationSourceEnum;
 import org.apache.commons.collections4.CollectionUtils;
+import sse.tongji.coidea.config.AppSettingsState;
 import sse.tongji.coidea.config.CoIDEAUIString;
 import sse.tongji.coidea.config.ConnectionConfig;
 import sse.tongji.coidea.listener.MyFileOpenCloseListener;
@@ -230,6 +231,17 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
             collaborationInfoView.displayRepoId(conf.getRepoId());
             collaborationInfoView.displayConnSuccess();
             log.info("localUser {0}", otClient.getLocalUser().toString());
+
+            AppSettingsState settingsState = AppSettingsState.getInstance();
+            log.info("读取DAL用户自定义配置 :open={0} depthOpen={1} timeOut={2} depth={3}/{4}",
+                    settingsState.isDalOpen(), settingsState.isDepthOpen(), settingsState.getTimeout(), settingsState.getMethodDepth(), settingsState.getFieldDepth());
+            otClient.updatePersonalSettings(new CoUser.PersonalSettings(DalPolicySettings.builder()
+                    .dalOpen(settingsState.isDalOpen())
+                    .depthOpen(settingsState.isDepthOpen())
+                    .methodDepth(settingsState.getMethodDepth())
+                    .fieldDepth(settingsState.getFieldDepth())
+                    .timeoutSecond(settingsState.getTimeout())
+                    .build()));
         } catch (CommonSysException e) {
             collaborationInfoView.displayConnErr(e.getMessage());
             log.error("connect error", e);
@@ -252,6 +264,12 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         openedFilePresenters.clear();
     }
 
+    /**
+     * 不可用
+     * @see LocalRepositoryPresenter#onLocalFileOpen(FileEditorManager, VirtualFile)
+     * @param absolutePath
+     * @param fileName
+     */
     @Override
     public void onLocalFileOpen(String absolutePath, String fileName) {
         throw new UnsupportedOperationException();
@@ -293,7 +311,6 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
     }
 
     public void onLocalFileOpen(FileEditorManager source, VirtualFile file) {
-        this.otClient.updatePersonalSettings(new CoUser.PersonalSettings(DalPolicySettings.builder().dalOpen(true).depthOpen(true).fieldDepth(1).methodDepth(2).timeoutSecond(10).build()));
         log.info("local file open {0}", file.getPath());
         if (GeneralFileIgnoreUtil.isIgnored(file.getName())) {
             log.info("local file opened and ignored {0}", file.getPath());
