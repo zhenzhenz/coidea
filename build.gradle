@@ -6,7 +6,7 @@ plugins {
 
 configurations.all {
     // 改成0会导致每次build比较慢，但可以及时拉到最新的snapshot包哦
-    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    resolutionStrategy.cacheChangingModulesFor 1800, 'seconds'
 }
 
 group 'sse.tongji'
@@ -54,7 +54,7 @@ dependencies {
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
     plugins = ['com.intellij.java']
-    version '2020.1.1'
+    version '2020.2.4'
 }
 patchPluginXml {
     changeNotes """

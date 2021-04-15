@@ -15,8 +15,8 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
-        <toolWindow id="Co IDEA" secondary="true" icon="AllIcons.General.Modified" anchor="right"
-                    factoryClass="sse.tongji.coidea.view.CollaborationViewFactory"/>
+        <toolWindow id="CoIDEA" secondary="false" icon="AllIcons.General.Modified" anchor="right"
+                    factoryClass="sse.tongji.coidea.view.CollaborationViewFactory" canCloseContents="false"/>
         <applicationService serviceImplementation="sse.tongji.coidea.config.AppSettingsState"/>
         <applicationConfigurable parentId="tools" instance="sse.tongji.coidea.config.AppSettingsConfigurable"
                                  id="sse.tongji.coidea.config.AppSettingsConfigurable"

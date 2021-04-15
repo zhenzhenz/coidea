@@ -63,7 +63,7 @@ public class NativeCollaborationView extends SimpleToolWindowPanel implements IN
         updateUISynchronously(() -> {
 //            connectServerButton.setText(CoIDEAUIString.DISCONNECT);
             this.connectEnable = false;
-            simpleNotifyInfoView.displayConnSuccess();
+//            simpleNotifyInfoView.displayConnSuccess();
         });
     }
 

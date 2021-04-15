@@ -41,6 +41,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import static sse.tongji.coidea.util.CoIDEAFilePathUtil.getProjectRelativePath;
@@ -218,6 +220,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
 
             } else {
                 otClient.joinRepo(conf.getRepoId(), conf.getUserName(), this);
+                notificationView.sysNotify("Syncing files, please wait...");
             }
 
             // 设置全项目监听
@@ -230,6 +233,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
             collaborationInfoView.displayUserName(conf.getUserName());
             collaborationInfoView.displayRepoId(conf.getRepoId());
             collaborationInfoView.displayConnSuccess();
+            log.info("connected");
             log.info("localUser {0}", otClient.getLocalUser().toString());
 
             AppSettingsState settingsState = AppSettingsState.getInstance();
@@ -259,7 +263,9 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         }
         openedFilePresenters.values().forEach(IFilePresenter::close);
         MyRepositoryListener.pauseListening();
-        VirtualFileManager.getInstance().removeVirtualFileListener(repositoryListener);
+        if (Objects.nonNull(repositoryListener)) {
+            VirtualFileManager.getInstance().removeVirtualFileListener(repositoryListener);
+        }
         otClient.leaveRepo();
         openedFilePresenters.clear();
     }
@@ -339,30 +345,35 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
     @Override
     public void onInitRepo(byte[] repoData, Collection<CoUser> users, DalPolicySettings dalPolicySettings) {
         log.info("接收到来自服务器的项目文件");
-        MyRepositoryListener.pauseListening();
-        try {
-            log.info("repo listening {0}", MyRepositoryListener.isResourceListening.get());
-            repositoryView.syncDataToDefault(repoData);
-        } catch (IOException e) {
-            log.error("IOException", e);
-        }
-        collaborationInfoView.displayCollaborators(users);
-        if (CollectionUtils.isNotEmpty(users)) {
-            log.info("项目成员数:{0} 成员: {1}", users.size(),
-                    users.stream().map(CoUser::getUserName).collect(Collectors.toList()));
-        }
-        this.dalPolicySettings = dalPolicySettings;
+        ExecutorService executorService = Executors.newFixedThreadPool(1);
+        executorService.submit(() -> {
+            MyRepositoryListener.pauseListening();
+            try {
+                log.info("repo listening {0}", MyRepositoryListener.isResourceListening.get());
+                repositoryView.syncDataToDefault(repoData);
+            } catch (IOException e) {
+                log.error("IOException", e);
+            }
+            collaborationInfoView.displayCollaborators(users);
+            if (CollectionUtils.isNotEmpty(users)) {
+                log.info("项目成员数:{0} 成员: {1}", users.size(),
+                        users.stream().map(CoUser::getUserName).collect(Collectors.toList()));
+            }
+            this.dalPolicySettings = dalPolicySettings;
 
-        log.info("接受全项目文件处理完毕");
+            log.info("接受全项目文件处理完毕");
 
-        ApplicationManager.getApplication().invokeAndWait(() -> {
-            WriteCommandAction.runWriteCommandAction(project, () -> {
-                LocalFileSystem.getInstance().refreshWithoutFileWatcher(false);
-                log.info("resume listening...");
-                this.repositoryListener = new MyRepositoryListener(this);
-                MyRepositoryListener.resumeListening();
-                VirtualFileManager.getInstance().addVirtualFileListener(repositoryListener);
-            });
+            LocalFileSystem.getInstance().refreshWithoutFileWatcher(false);
+            this.repositoryListener = new MyRepositoryListener(this);
+            MyRepositoryListener.resumeListening();
+            VirtualFileManager.getInstance().addVirtualFileListener(repositoryListener);
+//
+//            ApplicationManager.getApplication().invokeAndWait(() -> {
+//                WriteCommandAction.runWriteCommandAction(project, () -> {
+//
+//                });
+//            });
+            notificationView.sysNotify("Syncing files done");
         });
     }
 
