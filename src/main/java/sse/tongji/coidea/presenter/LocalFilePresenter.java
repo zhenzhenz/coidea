@@ -69,6 +69,7 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
         this.myAllKeyListener = new MyAllKeyListener(this);
         IdeEventQueue.getInstance().addDispatcher(myAllKeyListener, null);
         this.myCaretListener = new MyCaretListener(this);
+        //TODO remove caretlistener 在合适的地方
         FileEditorManager.getInstance(project).getSelectedTextEditor().getCaretModel().addCaretListener(myCaretListener);
         dalAwarenessPrinter = new DALAwarenessPrinter(project);
         ASTCoreObject.astCore = new ASTCoreImpl(project);
@@ -129,7 +130,7 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
     public void close() {
         getDocument().removeDocumentListener(myDocumentListener);
         IdeEventQueue.getInstance().removeDispatcher(myAllKeyListener);
-        //FileEditorManager.getInstance(project).getSelectedTextEditor().getCaretModel().removeCaretListener(myCaretListener);
+//        FileEditorManager.getInstance(project).getSelectedTextEditor().getCaretModel().removeCaretListener(myCaretListener);
     }
 
     @Override

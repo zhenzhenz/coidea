@@ -76,13 +76,13 @@ public class DALAwarenessPrinter {
         if (basicRegion.getLockList().size() == 1) {
             String userSiteName = basicRegion.getLockList().get(0).getSitename();
             if (!siteNameToColor.containsKey(userSiteName)) {
-                siteNameToColor.put(userSiteName, generateRandomColor());
+                siteNameToColor.put(userSiteName, generateColorFromUserName(userSiteName));
             }
             Color regionColor = siteNameToColor.get(userSiteName);
             if (basicRegion.getLockList().get(0).getLockType() == LockType.WORKINGLOCK) {
                 return regionColor;
             } else if (basicRegion.getLockList().get(0).getLockType() == LockType.DEPENDENCYLOCK) {
-                return mixColorWithColor(regionColor, new Color(200, 200, 200));
+                return mixColorWithColor(regionColor, new Color(240, 248, 255));
             } else if (basicRegion.getLockList().get(0).getLockType() == LockType.AWARENESSLOCK) {
                 return mixColorWithColor(mixColorWithColor(regionColor,new Color(255, 255, 255)), new Color(255, 255, 255));
             }
@@ -98,13 +98,20 @@ public class DALAwarenessPrinter {
         return colorWhite;
     }
 
-    private Color generateRandomColor() {
+    private Color generateColorFromUserName(String userName) {
+        int hashCode = userName.hashCode();
+        if (hashCode <= 0) {
+            hashCode = -hashCode;
+        }
+        int red = hashCode % 160;
+        int green = hashCode % 180;
+        int blue = hashCode % 200;
         Color mix = new Color(255, 255, 255);
-        Random random = new Random();
-        int red = random.nextInt(256);
-        int green = random.nextInt(256);
-        int blue = random.nextInt(256);
-
+//        Random random = new Random();
+//        int red = random.nextInt(256);
+//        int green = random.nextInt(256);
+//        int blue = random.nextInt(256);
+//
         // mix the color
         if (mix != null) {
             red = (red + mix.getRed()) / 2;
@@ -121,6 +128,5 @@ public class DALAwarenessPrinter {
         int blue = (targetColor.getBlue() + mixedcolor.getBlue()) / 2;
         return new Color(red, green, blue);
     }
-
 
 }

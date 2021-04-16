@@ -10,7 +10,7 @@ configurations.all {
 }
 
 group 'sse.tongji'
-version '1.0-SNAPSHOT'
+version '0.9-SNAPSHOT'
 
 
 repositories {
@@ -55,7 +55,7 @@ dependencies {
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
     plugins = ['com.intellij.java']
-    version '2020.1.1'
+    version '2020.2.4'
 }
 patchPluginXml {
     changeNotes """
