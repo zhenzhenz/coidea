@@ -31,7 +31,7 @@
               </grid>
             </constraints>
             <properties>
-              <text value="mtage.top:7990/ws/ot"/>
+              <text value="cc.mtage.top:7990/ws/ot"/>
             </properties>
           </component>
           <component id="3dee1" class="javax.swing.JLabel" binding="userNameLabel">

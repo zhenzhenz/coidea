@@ -6,7 +6,7 @@ plugins {
 
 configurations.all {
     // 改成0会导致每次build比较慢，但可以及时拉到最新的snapshot包哦
-    resolutionStrategy.cacheChangingModulesFor 1800, 'seconds'
+    resolutionStrategy.cacheChangingModulesFor 1, 'seconds'
 }
 
 group 'sse.tongji'
@@ -16,6 +16,7 @@ version '1.0-SNAPSHOT'
 repositories {
     maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
     mavenCentral()
+    mavenLocal()
     maven {
         name = "GitHubPackages"
         url = uri("https://maven.pkg.github.com/cscw-and-se/eyja-ot")
@@ -40,7 +41,6 @@ repositories {
             password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
         }
     }
-    mavenLocal()
 }
 
 dependencies {

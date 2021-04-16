@@ -1,9 +1,9 @@
 package sse.tongji.coidea.presenter;
 
+import com.google.common.base.Stopwatch;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
@@ -43,6 +43,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static sse.tongji.coidea.util.CoIDEAFilePathUtil.getProjectRelativePath;
@@ -67,6 +68,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
 
     private MyRepositoryListener repositoryListener;
     private MyFileOpenCloseListener fileEditorManagerListener;
+    private Stopwatch stopwatch;
 //    private MyTypedActionHandler typedActionHandler;
 
 
@@ -133,9 +135,12 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
      * @param e
      */
     public void onConnectDisconnectClicked(AnActionEvent e) {
+        // 按下时的最新Project
+        this.project = e.getProject();
         if (Objects.isNull(this.otClient) || !this.otClient.isConnected()) {
             ConfigureDialogWrapper connConfigureView = new ConfigureDialogWrapper();
             if (connConfigureView.showAndGet()) {
+                stopwatch = Stopwatch.createStarted();
                 this.connConfigureView = connConfigureView;
                 ConnConfigurationInput conf = this.connConfigureView.readConfigurationInput();
                 this.connConfigureView.close();
@@ -253,6 +258,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
             log.info("conn configuration view {0}", this.connConfigureView);
             this.connConfigureView.close();
         }
+        log.info("elapsed {0} ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
     }
 
     @Override
@@ -374,6 +380,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
 //                });
 //            });
             notificationView.sysNotify("Syncing files done");
+            log.info("receive repo elapsed {0} ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
         });
     }
 
