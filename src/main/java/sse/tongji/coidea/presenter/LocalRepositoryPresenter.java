@@ -351,37 +351,34 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
     @Override
     public void onInitRepo(byte[] repoData, Collection<CoUser> users, DalPolicySettings dalPolicySettings) {
         log.info("接收到来自服务器的项目文件");
-        ExecutorService executorService = Executors.newFixedThreadPool(1);
-        executorService.submit(() -> {
-            MyRepositoryListener.pauseListening();
-            try {
-                log.info("repo listening {0}", MyRepositoryListener.isResourceListening.get());
-                repositoryView.syncDataToDefault(repoData);
-            } catch (IOException e) {
-                log.error("IOException", e);
-            }
-            collaborationInfoView.displayCollaborators(users);
-            if (CollectionUtils.isNotEmpty(users)) {
-                log.info("项目成员数:{0} 成员: {1}", users.size(),
-                        users.stream().map(CoUser::getUserName).collect(Collectors.toList()));
-            }
-            this.dalPolicySettings = dalPolicySettings;
+        MyRepositoryListener.pauseListening();
+        try {
+            log.info("repo listening {0}", MyRepositoryListener.isResourceListening.get());
+            repositoryView.syncDataToDefault(repoData);
+        } catch (IOException e) {
+            log.error("IOException", e);
+        }
+        collaborationInfoView.displayCollaborators(users);
+        if (CollectionUtils.isNotEmpty(users)) {
+            log.info("项目成员数:{0} 成员: {1}", users.size(),
+                    users.stream().map(CoUser::getUserName).collect(Collectors.toList()));
+        }
+        this.dalPolicySettings = dalPolicySettings;
 
-            log.info("接受全项目文件处理完毕");
+        log.info("接受全项目文件处理完毕");
 
-            LocalFileSystem.getInstance().refreshWithoutFileWatcher(false);
-            this.repositoryListener = new MyRepositoryListener(this);
-            MyRepositoryListener.resumeListening();
-            VirtualFileManager.getInstance().addVirtualFileListener(repositoryListener);
+        LocalFileSystem.getInstance().refreshWithoutFileWatcher(false);
+        this.repositoryListener = new MyRepositoryListener(this);
+        MyRepositoryListener.resumeListening();
+        VirtualFileManager.getInstance().addVirtualFileListener(repositoryListener);
 //
 //            ApplicationManager.getApplication().invokeAndWait(() -> {
 //                WriteCommandAction.runWriteCommandAction(project, () -> {
 //
 //                });
 //            });
-            notificationView.sysNotify("Syncing files done");
-            log.info("receive repo elapsed {0} ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
-        });
+        notificationView.sysNotify("Syncing files done");
+        log.info("receive repo elapsed {0} ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
     }
 
     @Override
