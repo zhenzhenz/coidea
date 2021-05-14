@@ -1,6 +1,7 @@
 package sse.tongji.coidea.view.formUI;
 
 import com.intellij.openapi.util.IconLoader;
+import sse.tongji.coidea.view.CollaboratorListCellRenderer;
 
 import javax.swing.*;
 
@@ -21,7 +22,7 @@ public class CollaborationPanel implements MainContentInterface {
         vBox.add(userPanel);
         vBox.add(tabbedPane1);
         myToolWindowContent.add(vBox);
-
+        collaboratorList.setCellRenderer(new CollaboratorListCellRenderer());
 //        DefaultListModel<String> model = (DefaultListModel<String>) this.collaboratorList.getModel();
 //        model.addElement("asdxcvdfg");
     }

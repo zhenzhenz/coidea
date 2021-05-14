@@ -98,7 +98,7 @@ public class DALAwarenessPrinter {
         return colorWhite;
     }
 
-    private Color generateColorFromUserName(String userName) {
+    public static Color generateColorFromUserName(String userName) {
         int hashCode = userName.hashCode();
         if (hashCode <= 0) {
             hashCode = -hashCode;

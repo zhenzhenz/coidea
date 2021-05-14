@@ -88,9 +88,7 @@
                   </grid>
                 </constraints>
                 <properties>
-                  <model>
-                    <item value=""/>
-                  </model>
+                  <model/>
                 </properties>
               </component>
             </children>
