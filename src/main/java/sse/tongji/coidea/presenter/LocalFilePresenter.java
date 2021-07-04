@@ -70,6 +70,7 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
         this.myAllKeyListener = new MyAllKeyListener(this);
         IdeEventQueue.getInstance().addDispatcher(myAllKeyListener, null);
         this.myCaretListener = new MyCaretListener(this);
+        //TODO remove caretlistener 在合适的地方
         FileEditorManager.getInstance(project).getSelectedTextEditor().getCaretModel().addCaretListener(myCaretListener);
         dalAwarenessPrinter = new DALAwarenessPrinter(project);
         ASTCoreObject.astCore = new ASTCoreImpl(project);
@@ -130,7 +131,7 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
     public void close() {
         getDocument().removeDocumentListener(myDocumentListener);
         IdeEventQueue.getInstance().removeDispatcher(myAllKeyListener);
-        //FileEditorManager.getInstance(project).getSelectedTextEditor().getCaretModel().removeCaretListener(myCaretListener);
+//        FileEditorManager.getInstance(project).getSelectedTextEditor().getCaretModel().removeCaretListener(myCaretListener);
     }
 
     @Override
@@ -147,9 +148,12 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
     public void onCaretMove(int offset, CoUser coUser) {
         ApplicationManager.getApplication().invokeAndWait(() -> {
             //监听到远端光标移动， 说明远端允许编辑此位置（同意后才会发送光标移动消息）
-            log.info("CoUser用户移动光标到" + offset);
-            DalCore.doCFDbyUserOperation(coUser.getUserName(), getPath(), OperationType.SELECT, offset, 0, coUser.getPersonalSettings().getDalPolicySettings());
-            dalAwarenessPrinter.refreshHighlight();
+            if (getDalPolicySettings().isDalOpen()) {
+                log.info("CoUser用户移动光标到" + offset);
+                DalCore.doCFDbyUserOperation(coUser.getUserName(), getPath(), OperationType.SELECT, offset, 0, coUser.getPersonalSettings().getDalPolicySettings());
+                log.info("CoUser PolicySetting : field Depth = {0}, method Depth = {1}", coUser.getPersonalSettings().getDalPolicySettings().getFieldDepth(), coUser.getPersonalSettings().getDalPolicySettings().getMethodDepth());
+                dalAwarenessPrinter.refreshHighlight();
+            }
         });
     }
 
@@ -178,12 +182,10 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
                 fileContentDeleteAction.getDeleteRangeSet().asRanges().forEach(eachRange -> {
                     getDocument().deleteString(eachRange.lowerEndpoint(), eachRange.upperEndpoint());
                 });
-                for (Range<Integer> range : fileContentDeleteAction.getDeleteRangeSet().asRanges()) {
+                for (Range<Integer> range : operation.getDeleteRangeSet().asRanges()) {
                     int start = range.lowerEndpoint();
-                    DalCore.doCFDbyUserOperation(coUser.getUserName(), getPath(), OperationType.DELETE, start,
-                            RangeSetUtil.lengthOfRange(range), coUser.getPersonalSettings().getDalPolicySettings());
+                    DalCore.doCFDbyUserOperation(coUser.getUserName(), getPath(), OperationType.DELETE, start, RangeSetUtil.lengthOfRange(range), coUser.getPersonalSettings().getDalPolicySettings());
                 }
-                dalAwarenessPrinter.refreshHighlight();
             });
             this.myDocumentListener.remotePlayingDone();
         });

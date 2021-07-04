@@ -10,7 +10,7 @@ configurations.all {
 }
 
 group 'sse.tongji'
-version '1.0-SNAPSHOT'
+version '0.9-SNAPSHOT'
 
 
 repositories {
@@ -41,6 +41,7 @@ repositories {
             password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
         }
     }
+    mavenLocal()
 }
 
 dependencies {
