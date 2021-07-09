@@ -11,16 +11,19 @@ import com.intellij.psi.util.PsiTreeUtil;
 
 import sse.tongji.coidea.util.CoIDEAFilePathUtil;
 import sse.tongji.dal.astoperation.ASTCore;
+import sse.tongji.dal.editingoperation.EditingOperation;
 import sse.tongji.dal.locksystem.BasicRegion;
 import sse.tongji.dal.locksystem.CodeType;
 import sse.tongji.dal.locksystem.RegionType;
 import sse.tongji.dal.userinfo.DalUser;
+import sse.tongji.dal.userinfo.DalUserGroup;
 
 import java.util.*;
 
 public class ASTCoreImpl implements ASTCore {
     private Project project;
     private DalUser dalUser;
+    private EditingOperation editingOperation;
     private VirtualFile virtualFile;
     private PsiFile psiFile;
     private PsiElement psiElement;
@@ -32,12 +35,12 @@ public class ASTCoreImpl implements ASTCore {
     }
 
     @Override
-    public BasicRegion detectTargetedRegion(DalUser dalUser) {
+    public BasicRegion detectTargetedRegion(EditingOperation editingOperation) {
         //准备工作
         originMethod = null;
-        int offset = dalUser.editingPosition;
-        this.dalUser = dalUser;
-        this.virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByPath(CoIDEAFilePathUtil.getStandardAbsolutePath(dalUser.editingFileName, project.getBasePath()));
+        int offset = editingOperation.getEditingPosition();
+        this.editingOperation = editingOperation;
+        this.virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByPath(CoIDEAFilePathUtil.getStandardAbsolutePath(editingOperation.getEditingFileName(), project.getBasePath()));
         Document document = FileDocumentManager.getInstance().getCachedDocument(virtualFile);
         this.psiFile = PsiFileFactory.getInstance(project).createFileFromText(Language.findLanguageByID("JAVA"), document.getText());
         //找到offset的元素
@@ -49,9 +52,10 @@ public class ASTCoreImpl implements ASTCore {
 
     @Override
     public List<BasicRegion> deriveDependedRegionSet(BasicRegion basicRegion) {
+        this.dalUser = DalUserGroup.getDalUserBySiteName(editingOperation.getSiteName());
         List<BasicRegion> result = new ArrayList<>();
         if (originMethod != null) {
-            result = findDependedRegionByDepth(originMethod, dalUser.fieldDepth, dalUser.methodDepth);
+            result = findDependedRegionByDepth(originMethod, dalUser.getFieldDepth(), dalUser.getMethodDepth());
         }
         return result;
     }
@@ -121,9 +125,14 @@ public class ASTCoreImpl implements ASTCore {
         for (PsiReferenceExpression refer : childOfRefer) {
             //因为找不到直接找引用全局字段的方法
             //所以方案是，先将所以的字段列出来，找到方法内的所有引用，如果引用了字段，就加入结果
-            if (psiFields.contains(refer.resolve())) {
+            //TODO
+//            if (psiFields.contains(refer.resolve())) {
+            //TODO
+            if (PsiTreeUtil.instanceOf(refer.resolve(), PsiField.class)) {
                 result.add((PsiField) refer.resolve());
             }
+//            }
+//            System.out.println("Refer.resolve() : " + refer.resolve().getText() + "Containing File :" + refer.resolve().getContainingFile().getVirtualFile());
         }
         return result;
     }
@@ -138,7 +147,8 @@ public class ASTCoreImpl implements ASTCore {
         //如果是method
         if (containingMethod != null) {
             //将信息保留起来留到找依赖区域时用
-            psiFields = PsiTreeUtil.findChildrenOfType(psiFile, PsiField.class);
+            //TODO
+//            psiFields = PsiTreeUtil.findChildrenOfType(psiFile, PsiField.class);
             originMethod = containingMethod;
             return getMethodBasicRegion(containingMethod);
         }
@@ -151,7 +161,7 @@ public class ASTCoreImpl implements ASTCore {
         BasicRegion result = new BasicRegion(fieldName, RegionType.BASICAREA);
         //field=1
         result.setCodeType(CodeType.FIELD);
-        result.setRegionFileName(dalUser.editingFileName);
+        result.setRegionFileName(getPath(psiField.getContainingFile().getVirtualFile().getPath()));
         result.setStartOffset(psiField.getTextRange().getStartOffset());
         result.setEndOffset(psiField.getTextRange().getEndOffset());
         return result;
@@ -165,7 +175,7 @@ public class ASTCoreImpl implements ASTCore {
 
         BasicRegion result = new BasicRegion(methodfinalName, RegionType.BASICAREA);
         result.setCodeType(CodeType.METHOD);
-        result.setRegionFileName(dalUser.editingFileName);
+        result.setRegionFileName(getPath(psiMethod.getContainingFile().getVirtualFile().getPath()));
         result.setStartOffset(psiMethod.getTextRange().getStartOffset());
         //TODO 使用start end 还是start length
         result.setEndOffset(psiMethod.getTextRange().getEndOffset());
@@ -191,5 +201,13 @@ public class ASTCoreImpl implements ASTCore {
         }
         //参数空 直接返回name
         return methodName;
+    }
+//
+    private String getPath(String path) {
+        if (path.equals("/foo.bar")) {
+            return editingOperation.getEditingFileName();
+        } else {
+            return CoIDEAFilePathUtil.getProjectRelativePath(path, project);
+        }
     }
 }

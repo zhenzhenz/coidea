@@ -336,6 +336,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
             localFilePresenter.setLocalRepositoryPresenter(this);
             this.openedFilePresenters.put(fileRelativePath, localFilePresenter);
         });
+
     }
 
     public void onLocalFileClose(FileEditorManager source, VirtualFile file) {
