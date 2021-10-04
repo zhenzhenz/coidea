@@ -35,6 +35,7 @@ import sse.tongji.coidea.listener.MyRepositoryListener;
 import sse.tongji.coidea.util.CoIDEAFilePathUtil;
 import sse.tongji.coidea.view.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -79,6 +80,12 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
     public LocalRepositoryPresenter(IBasicCollaborationInfoView collaborationInfoView, INotificationView notificationView,
                                     IRepositoryEditorView repositoryView) {
         super(collaborationInfoView, notificationView, repositoryView);
+    }
+
+    @Override
+    public File localRepoFile() {
+        log.info("当前base path=" + project.getBasePath());
+        return new File(project.getBasePath());
     }
 
     /**

@@ -118,6 +118,7 @@ public class NativeCollaborationView extends SimpleToolWindowPanel implements IN
 //        group.add(new TeamAction());
         group.add(new ConnectAction());
         group.add(new DisConnectAction());
+        group.add(new GitAction());
 
         final ActionToolbar actionToolBar = ActionManager.getInstance().createActionToolbar("co idea tool bar", group, true);
         return JBUI.Panels.simplePanel(actionToolBar.getComponent());
@@ -177,6 +178,17 @@ public class NativeCollaborationView extends SimpleToolWindowPanel implements IN
         public void update(@NotNull AnActionEvent e) {
             // todo: 设置按钮enable/disable
             e.getPresentation().setEnabled(!connectEnable);
+        }
+    }
+
+    private final class GitAction extends AnAction {
+        public GitAction() {
+            super("Git Integration", "Integration of Git", AllIcons.Modules.Split);
+        }
+
+        @Override
+        public void actionPerformed(@NotNull AnActionEvent e) {
+            // TODO
         }
     }
 
