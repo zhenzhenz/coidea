@@ -5,12 +5,15 @@ import com.intellij.ide.IdeEventQueue;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.event.CaretEvent;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileEditor.impl.LoadTextUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import dev.mtage.eyjaot.client.OtClient;
 import dev.mtage.eyjaot.client.entity.ClientCoFile;
@@ -35,8 +38,8 @@ import sse.tongji.dal.locksystem.BasicRegionList;
 import sse.tongji.dal.userinfo.DalUserGroup;
 import sse.tongji.dal.userinfo.OperationType;
 
-import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 
@@ -78,8 +81,8 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
 
     }
 
-    public boolean tryAcquireSemaphore(long timeOut, TimeUnit timeUnit) throws InterruptedException {
-        return this.documentSemaphore.tryAcquire(timeOut, timeUnit);
+    public boolean tryAcquireLock(long timeOut, TimeUnit timeUnit) throws InterruptedException {
+        return this.documentLock.tryLock(timeOut, timeUnit);
     }
 
     public void onLocalEdit(DocumentEvent event) {
@@ -136,7 +139,10 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
     public void close() {
         getDocument().removeDocumentListener(myDocumentListener);
         IdeEventQueue.getInstance().removeDispatcher(myAllKeyListener);
-        //FileEditorManager.getInstance(project).getSelectedTextEditor().getCaretModel().removeCaretListener(myCaretListener);
+        Editor selectedTextEditor = FileEditorManager.getInstance(project).getSelectedTextEditor();
+        if (Objects.nonNull(selectedTextEditor)) {
+            selectedTextEditor.getCaretModel().removeCaretListener(myCaretListener);
+        }
     }
 
     @Override
@@ -236,5 +242,23 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
 
     private DalPolicySettings getDalPolicySettings() {
         return this.otClientCoFile.getLocalUser().getPersonalSettings().getDalPolicySettings();
+    }
+
+    @Override
+    public String currentContent() {
+        return ApplicationManager.getApplication().runReadAction((Computable<String>)
+                () -> FileDocumentManager.getInstance().getDocument(virtualFile).getText());
+    }
+
+    @Override
+    public <V> V runInMain(Callable<V> task) {
+        ApplicationManager.getApplication().invokeAndWait(() -> {
+            try {
+                task.call();
+            } catch (Exception e) {
+                log.error("task execute error", e);
+            }
+        });
+        return null;
     }
 }

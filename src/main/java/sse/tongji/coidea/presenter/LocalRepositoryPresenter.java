@@ -16,6 +16,7 @@ import dev.mtage.error.CommonSysException;
 import dev.mtage.eyjaot.client.OtClient;
 import dev.mtage.eyjaot.client.entity.ClientCoFile;
 import dev.mtage.eyjaot.client.inter.ILocalFileEditor;
+import dev.mtage.eyjaot.client.inter.IStateBasedLocalFileEditor;
 import dev.mtage.eyjaot.client.inter.presenter.GeneralLocalRepositoryPresenter;
 import dev.mtage.eyjaot.client.inter.presenter.GeneralUnopenedFilePresenter;
 import dev.mtage.eyjaot.client.inter.presenter.IFilePresenter;
@@ -41,6 +42,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -173,10 +175,27 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
             log.info("本地未打开的文件插入 {0}", operation.getContent());
             super.onInsert(operation, source, coUser);
         }
+
+        @Override
+        public <V> V runInMain(Callable<V> task) {
+            ApplicationManager.getApplication().invokeAndWait(() -> {
+                try {
+                    task.call();
+                } catch (Exception e) {
+                    log.error("task execute error", e);
+                }
+            });
+            return null;
+        }
+
+        @Override
+        public void close() {
+            log.error(getPath() + " UnOpenFilePresenter cannot be closed");
+        }
     }
 
     @Override
-    public ILocalFileEditor getLocalFileEditor(String path) {
+    public IStateBasedLocalFileEditor getLocalFileEditor(String path) {
         return openedFilePresenters.stream().filter(p -> Objects.equals(p.getPath(), path))
                 .findAny().orElseGet(() -> {
                     log.info("构建未打开文件 {0} 的presenter", path);
@@ -309,7 +328,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         }
         LocalFilePresenter localFilePresenter = new LocalFilePresenter(project, file, otClient);
         ApplicationManager.getApplication().invokeLater(() -> {
-            ClientCoFile clientCoFile = otClient.openFile(localFilePresenter);
+            ClientCoFile clientCoFile = otClient.openFileV2(localFilePresenter);
             localFilePresenter.setOtClientCoFile(clientCoFile);
             localFilePresenter.setLocalRepositoryPresenter(this);
             this.openedFilePresenters.add(localFilePresenter);
