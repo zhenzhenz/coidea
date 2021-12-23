@@ -17,8 +17,8 @@ import dev.mtage.eyjaot.client.entity.ClientCoFile;
 import dev.mtage.eyjaot.client.inter.presenter.GeneralLocalFilePresenter;
 import dev.mtage.eyjaot.client.inter.util.MyLogger;
 import dev.mtage.eyjaot.core.CoUser;
-import dev.mtage.eyjaot.core.action.file.FileContentDeleteAction;
-import dev.mtage.eyjaot.core.action.file.FileContentInsertAction;
+import dev.mtage.eyjaot.core.action.file_tree.FileContentDeleteAction;
+import dev.mtage.eyjaot.core.action.file_tree.FileContentInsertAction;
 import dev.mtage.eyjaot.core.dal.DalPolicySettings;
 import dev.mtage.eyjaot.core.util.EditOperationSourceEnum;
 import dev.mtage.eyjaot.core.util.RangeSetUtil;
@@ -38,6 +38,7 @@ import sse.tongji.dal.userinfo.DalUserGroup;
 import sse.tongji.dal.editingoperation.OperationType;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 
@@ -93,6 +94,9 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
         } else {
             log.error("本地文档变化但未识别处理 {0}", event);
         }
+        if (notInitDone()) {
+            return;
+        }
 
         // DALPart
         if (event.getOldLength() != 0) {
@@ -102,16 +106,19 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
         }
         dalAwarenessPrinter.refreshHighlight(getPath());
         log.info("本地文档变化处理完成 尝试释放文档编辑锁");
-        releaseSemaphore();
+        releaseLock();
     }
 
     public void localCaretMove(CaretEvent event) {
-        log.purpled("鼠标位置变化 : getCaretModel() : " + event.getEditor().getCaretModel().getOffset());
+        log.purpled("光标位置变化 : getCaretModel() : " + event.getEditor().getCaretModel().getOffset());
+        if (notInitDone()) {
+            return;
+        }
         //判断当前区域是否可以插入光标
         if (CheckPermission.doCheckPermission(buildDALEditingOperation(getLocalUser().getUserName(), OperationType.SELECT, event.getEditor().getCaretModel().getOffset(), 0))) {
             DALCore.doDALUpdateByEditingOperation(buildDALEditingOperation(getLocalUser().getUserName(),  OperationType.SELECT, event.getEditor().getCaretModel().getOffset(), 0));
             //只有本地permit，才给远端发送光标移动的信息
-            otClientCoFile.localCaretMove(event.getEditor().getCaretModel().getOffset());
+            otClient.caretMove(otClientCoFile, event.getEditor().getCaretModel().getOffset());
         } else {
             //TODO 提醒这里不能修改文字 并且拒绝任何的修改操作
             Messages.showInfoMessage("You can't work in this Region", "INFO");
@@ -193,6 +200,12 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
             });
             this.myDocumentListener.remotePlayingDone();
         });
+    }
+
+    private boolean notInitDone() {
+        // TODO 由于LocalRepoPresenter使用的是invokeLater，在新建文件时很容易出现LocalFilePresenter未初始化完成光标移动事件就过来的情况
+        //  要比较好的解决问题，应该妥善利用IDEA的事件机制重构
+        return Objects.isNull(otClientCoFile) || Objects.isNull(localRepositoryPresenter);
     }
 
     private Document getDocument() {

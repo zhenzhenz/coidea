@@ -57,7 +57,7 @@ public class MyAllKeyListener implements IdeEventQueue.EventDispatcher {
                 boolean lockResult = localFilePresenter.tryAcquireSemaphore(100, TimeUnit.MILLISECONDS);
                 if (!lockResult) {
                     log.error("本地获取锁失败...");
-                    localFilePresenter.releaseSemaphore();
+                    localFilePresenter.releaseLock();
                     return true;
                 }
             } catch (InterruptedException interruptedException) {

@@ -24,13 +24,12 @@ import dev.mtage.eyjaot.client.inter.util.GeneralFileIgnoreUtil;
 import dev.mtage.eyjaot.client.inter.util.MyLogger;
 import dev.mtage.eyjaot.client.inter.view.*;
 import dev.mtage.eyjaot.core.CoUser;
-import dev.mtage.eyjaot.core.action.file.FileContentInsertAction;
+import dev.mtage.eyjaot.core.action.file_tree.FileContentInsertAction;
 import dev.mtage.eyjaot.core.dal.DalPolicySettings;
 import dev.mtage.eyjaot.core.util.EditOperationSourceEnum;
 import org.apache.commons.collections4.CollectionUtils;
 import sse.tongji.coidea.config.AppSettingsState;
 import sse.tongji.coidea.config.CoIDEAUIString;
-import sse.tongji.coidea.config.ConnectionConfig;
 import sse.tongji.coidea.listener.MyFileOpenCloseListener;
 import sse.tongji.coidea.listener.MyRepositoryListener;
 import sse.tongji.coidea.util.CoIDEAFilePathUtil;
@@ -41,8 +40,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -161,7 +158,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         @Override
         protected Path getAbsolutePath() {
 //            log.info("{0} absolutePath:{1}", getPath(), Paths.get(CoEclipseFilePathUtil.getStandardAbsolutePath(getPath(), repositoryView.getDefaultProjectPath())));
-            return Paths.get(CoIDEAFilePathUtil.getStandardAbsolutePath(getPath(), repositoryView.getDefaultProjectPath()));
+            return Paths.get(CoIDEAFilePathUtil.getStandardAbsolutePath(getPath(), repositoryView.getDefaultProjectPath().toString()));
         }
 
         @Override
@@ -173,11 +170,11 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
 
     @Override
     public ILocalFileEditor getLocalFileEditor(String path) {
-        if (openedFilePresenters.containsKey(path)) {
-            return openedFilePresenters.get(path);
-        }
-        log.info("构建未打开文件 {0} 的presenter", path);
-        return new LocalUnOpenFilePresenter(path);
+        return openedFilePresenters.stream().filter(p -> Objects.equals(p.getPath(), path))
+                .findAny().orElseGet(() -> {
+                    log.info("构建未打开文件 {0} 的presenter", path);
+                    return new LocalUnOpenFilePresenter(path);
+                });
     }
 
 
@@ -186,22 +183,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         try {
             log.info("尝试连接，配置 {0}", conf);
             conf.validate();
-            this.otClient = OtClient.createWsClient(conf.getServerAddr()).connect();
-            for (int i = 0; i < ConnectionConfig.INIT_CONNECT_MAX; i++) {
-                if (otClient.isConnected()) {
-                    break;
-                }
-                try {
-                    // 这个地方确实设计得不大好...未来应该考虑异步回调
-                    Thread.sleep(20);
-                } catch (InterruptedException e) {
-                    log.error("InterruptedException when waiting for connection", e);
-                }
-                if (i + 1 >= ConnectionConfig.INIT_CONNECT_MAX) {
-                    messageView.messageWithDefaultTitle("Cannot connect to server. Check your Internet connection please.");
-                    return;
-                }
-            }
+            this.otClient = OtClient.createWsClient(conf.getServerAddr());
             if (conf.isNewRepo()) {
                 try {
                     byte[] repoData = repositoryView.readDefaultProjectAllData();
@@ -267,7 +249,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
             notificationView.sysNotify("You have disconnected");
             return;
         }
-        openedFilePresenters.values().forEach(IFilePresenter::close);
+        openedFilePresenters.forEach(IFilePresenter::close);
         MyRepositoryListener.pauseListening();
         if (Objects.nonNull(repositoryListener)) {
             VirtualFileManager.getInstance().removeVirtualFileListener(repositoryListener);
@@ -289,8 +271,8 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
 
     @Deprecated
     public void onLocalKeyPressed(VirtualFile file, char charTyped) {
-        this.openedFilePresenters.get(getProjectRelativePath(file, project))
-                .acquireSemaphore();
+        this.openedFilePresenters.stream().filter(pre -> Objects.equals(getProjectRelativePath(file, project), pre.getPath()))
+                .forEach(IFilePresenter::acquireLock);
     }
 
     @Override
@@ -300,9 +282,8 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
     }
 
     public void onLocalFileCreate(VirtualFile file) {
-        acquireSemaphore();
         String projectRelativePath = FilePathUtil.getProjectRelativePath(file.getPath(),
-                repositoryView.getDefaultProjectPath(), repositoryView.getDefaultProjectName());
+                repositoryView.getDefaultProjectPath().toString());
         if (Files.isDirectory(Paths.get(file.getPath()))) {
             otClient.createDir(projectRelativePath, file.getName());
         }
@@ -311,15 +292,6 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
             otClient.createFile(projectRelativePath, projectRelativePath, document.getText());
             log.info("send create file request {0} name: {1}", projectRelativePath, file.getName());
         });
-        releaseSemaphore();
-    }
-
-    @Override
-    public void onDeleteFile(String path, CoUser user) throws IOException {
-        // TODO 对项目级别锁的获取可以考虑放在inter @周泓光
-        acquireSemaphore();
-        super.onDeleteFile(path, user);
-        releaseSemaphore();
     }
 
     public void onLocalFileOpen(FileEditorManager source, VirtualFile file) {
@@ -329,12 +301,11 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
             return;
         }
         LocalFilePresenter localFilePresenter = new LocalFilePresenter(project, file, otClient);
-        String fileRelativePath = getProjectRelativePath(file, project);
         ApplicationManager.getApplication().invokeLater(() -> {
-            ClientCoFile clientCoFile = otClient.openFile(fileRelativePath, file.getName(), localFilePresenter);
+            ClientCoFile clientCoFile = otClient.openFile(localFilePresenter);
             localFilePresenter.setOtClientCoFile(clientCoFile);
             localFilePresenter.setLocalRepositoryPresenter(this);
-            this.openedFilePresenters.put(fileRelativePath, localFilePresenter);
+            this.openedFilePresenters.add(localFilePresenter);
         });
 
     }
