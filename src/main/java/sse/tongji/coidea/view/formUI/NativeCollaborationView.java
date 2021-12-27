@@ -79,6 +79,16 @@ public class NativeCollaborationView extends SimpleToolWindowPanel implements IN
     }
 
     @Override
+    public void disableGit() {
+        // TODO
+    }
+
+    @Override
+    public void enableGit() {
+        // TODO
+    }
+
+    @Override
     public void displayCollaborators(Collection<CoUser> coUsers) {
         updateUISynchronously(() -> {
             DefaultListModel<String> model = (DefaultListModel<String>) this.collaborationPanel.collaboratorList.getModel();

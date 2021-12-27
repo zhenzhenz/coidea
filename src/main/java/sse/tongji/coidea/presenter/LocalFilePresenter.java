@@ -10,7 +10,6 @@ import com.intellij.openapi.editor.event.CaretEvent;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
-import com.intellij.openapi.fileEditor.impl.LoadTextUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Computable;
@@ -112,10 +111,11 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
     }
 
     public void localCaretMove(CaretEvent event) {
-        log.purpled("光标位置变化 : getCaretModel() : " + event.getEditor().getCaretModel().getOffset());
+        log.purpled("本地光标位置变化: " + event.getEditor().getCaretModel().getOffset());
         if (notInitDone()) {
             return;
         }
+        // DAL 部分 ↓
         //判断当前区域是否可以插入光标
         boolean isPermitted;
         if (DalUserGroup.dalUserGroup.size() == 0) {

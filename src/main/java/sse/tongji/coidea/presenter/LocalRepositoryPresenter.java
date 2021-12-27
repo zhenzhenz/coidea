@@ -167,7 +167,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         @Override
         protected Path getAbsolutePath() {
 //            log.info("{0} absolutePath:{1}", getPath(), Paths.get(CoEclipseFilePathUtil.getStandardAbsolutePath(getPath(), repositoryView.getDefaultProjectPath())));
-            return Paths.get(CoIDEAFilePathUtil.getStandardAbsolutePath(getPath(), repositoryView.getDefaultProjectPath().toString()));
+            return Paths.get(CoIDEAFilePathUtil.getStandardAbsolutePath(getPath(), repositoryView.getProjectPath().toString()));
         }
 
         @Override
@@ -212,7 +212,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
             this.otClient = OtClient.createWsClient(conf.getServerAddr());
             if (conf.isNewRepo()) {
                 try {
-                    byte[] repoData = repositoryView.readDefaultProjectAllData();
+                    byte[] repoData = repositoryView.readProjectAllData();
                     otClient.newRepo(conf.getRepoId(), conf.getUserName(), repoData,
                             DalPolicySettings.builder()
                                     .dalOpen(conf.isOpenDal())
@@ -284,6 +284,11 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         openedFilePresenters.clear();
     }
 
+    @Override
+    public void onGitClicked() {
+        // TODO
+    }
+
     /**
      * 不可用
      * @see LocalRepositoryPresenter#onLocalFileOpen(FileEditorManager, VirtualFile)
@@ -309,7 +314,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
 
     public void onLocalFileCreate(VirtualFile file) {
         String projectRelativePath = FilePathUtil.getProjectRelativePath(file.getPath(),
-                repositoryView.getDefaultProjectPath().toString());
+                repositoryView.getProjectPath().toString());
         if (Files.isDirectory(Paths.get(file.getPath()))) {
             otClient.createDir(projectRelativePath, file.getName());
         }
@@ -321,7 +326,8 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
     }
 
     public void onLocalFileOpen(FileEditorManager source, VirtualFile file) {
-        log.info("local file open {0}", file.getPath());
+        log.info("local file open {0} relative path={1}", file.getPath(),
+                CoIDEAFilePathUtil.getProjectRelativePath(file.getPath(), project));
         if (GeneralFileIgnoreUtil.isIgnored(file.getName())) {
             log.info("local file opened and ignored {0}", file.getPath());
             return;

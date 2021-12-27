@@ -8,13 +8,11 @@ import dev.mtage.eyjaot.client.inter.util.GeneralFileIgnoreUtil;
 import dev.mtage.eyjaot.client.inter.util.MyLogger;
 import dev.mtage.eyjaot.client.inter.view.GeneralRepositoryEditorImpl;
 import org.apache.commons.io.FileUtils;
-import sse.tongji.coidea.listener.MyRepositoryListener;
 import sse.tongji.coidea.presenter.LocalRepositoryPresenter;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -32,20 +30,20 @@ public class RepositoryEditorImpl extends GeneralRepositoryEditorImpl {
     }
 
     @Override
-    public Path getDefaultProjectPath() {
+    public Path getProjectPath() {
         return Optional.ofNullable(project.getBasePath())
                 .map(Path::of)
                 .orElse(null);
     }
 
     @Override
-    public String getDefaultProjectName() {
+    public String getProjectName() {
         return project.getName();
     }
 
     @Override
     public void syncDataToDefault(byte[] repoData) throws IOException {
-        for (Path eachFile : Files.list(getDefaultProjectPath()).collect(Collectors.toList())) {
+        for (Path eachFile : Files.list(getProjectPath()).collect(Collectors.toList())) {
             if (GeneralFileIgnoreUtil.isPathIgnored(eachFile)) {
                 continue;
             }
