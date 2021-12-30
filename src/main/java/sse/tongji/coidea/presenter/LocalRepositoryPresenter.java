@@ -34,6 +34,7 @@ import sse.tongji.coidea.listener.MyFileOpenCloseListener;
 import sse.tongji.coidea.listener.MyRepositoryListener;
 import sse.tongji.coidea.util.CoIDEAFilePathUtil;
 import sse.tongji.coidea.view.*;
+import sse.tongji.dal.userinfo.DalUserGroup;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -384,4 +385,14 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         return otClient.isConnected();
     }
 
+    @Override
+    public void onUserJoined(CoUser user) {
+        super.onUserJoined(user);
+
+    }
+
+    @Override
+    public void onUserLeft(CoUser user, Date leaveTime) {
+        super.onUserLeft(user, leaveTime);
+    }
 }

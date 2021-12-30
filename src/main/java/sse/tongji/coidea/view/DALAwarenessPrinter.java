@@ -14,6 +14,7 @@ import com.intellij.openapi.project.Project;
 
 import com.intellij.openapi.vfs.LocalFileSystem;
 import dev.mtage.eyjaot.client.inter.util.MyLogger;
+import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.ranges.Range;
 import sse.tongji.coidea.util.CoIDEAFilePathUtil;
 import sse.tongji.dal.locksystem.BasicRegion;
@@ -21,6 +22,7 @@ import sse.tongji.dal.locksystem.BasicRegionList;
 import sse.tongji.dal.locksystem.Lock;
 import sse.tongji.dal.locksystem.LockType;
 
+import javax.print.Doc;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
@@ -64,11 +66,19 @@ public class DALAwarenessPrinter {
 //        log.info(document.getText());
 //        log.info("---------------------------------------------");
         for (Map.Entry<String, List<BasicRegion>> entry : BasicRegionList.getBasicRegionManagement().entrySet()) {
-            Document document = FileDocumentManager.getInstance()
-                    .getCachedDocument(LocalFileSystem.getInstance()
-                            .refreshAndFindFileByPath(CoIDEAFilePathUtil
-                                    .getStandardAbsolutePath(entry.getKey(), project.getBasePath())));
-            if (EditorFactory.getInstance().getEditors(document).length == 0) {
+            Document document = null;
+            if (LocalFileSystem.getInstance()
+                    .refreshAndFindFileByPath(CoIDEAFilePathUtil
+                            .getStandardAbsolutePath(entry.getKey(), project.getBasePath())) != null) {
+                document = FileDocumentManager.getInstance()
+                        .getCachedDocument(LocalFileSystem.getInstance()
+                                .refreshAndFindFileByPath(CoIDEAFilePathUtil
+                                        .getStandardAbsolutePath(entry.getKey(), project.getBasePath())));
+            }
+//            if (EditorFactory.getInstance().getEditors(document).length == 0) {
+//                continue;
+//            }
+            if (document == null) {
                 continue;
             }
             Editor editor = EditorFactory.getInstance().getEditors(document)[0];
