@@ -387,15 +387,4 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         return otClient.isConnected();
     }
 
-    @Override
-    public void onUserJoined(CoUser user) {
-        super.onUserJoined(user);
-        DALCore.doDALUpdateUserByDALSetting(DALUtil.buildDalSettingMessage(user.getUserName(),user.getPersonalSettings().getDalPolicySettings()));
-    }
-
-    @Override
-    public void onUserLeft(CoUser user, Date leaveTime) {
-        super.onUserLeft(user, leaveTime);
-        DalUserGroup.removeUserBySiteName(user.getUserName());
-    }
 }
