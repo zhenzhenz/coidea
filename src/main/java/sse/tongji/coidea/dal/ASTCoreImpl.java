@@ -28,7 +28,6 @@ public class ASTCoreImpl implements ASTCore {
     private PsiFile psiFile;
     private PsiElement psiElement;
     private PsiMethod originMethod;
-    private Collection<PsiField> psiFields;
 
     public ASTCoreImpl(Project project) {
         this.project = project;
@@ -45,23 +44,25 @@ public class ASTCoreImpl implements ASTCore {
         this.psiFile = PsiFileFactory.getInstance(project).createFileFromText(Language.findLanguageByID("JAVA"), document.getText());
         //找到offset的元素
         this.psiElement = psiFile.findElementAt(offset);
-
         //根据元素找到对应区域
         return findBasicRegion(psiElement);
     }
 
     @Override
-    public List<BasicRegion> deriveDependedRegionSet(BasicRegion basicRegion) {
+    public List<BasicRegion> deriveDependedRegionSet() {
+//        System.out.println(editingOperation.getSiteName());
+//        System.out.println(DalUserGroup.getDalUserGroup());
         this.dalUser = DalUserGroup.getDalUserBySiteName(editingOperation.getSiteName());
         List<BasicRegion> result = new ArrayList<>();
         if (originMethod != null) {
             result = findDependedRegionByDepth(originMethod, dalUser.getFieldDepth(), dalUser.getMethodDepth());
+            System.out.println("--------" + result.size());
         }
         return result;
     }
 
     @Override
-    public List<BasicRegion> deriveAwarenessRegionSet(BasicRegion basicRegion) {
+    public List<BasicRegion> deriveAwarenessRegionSet() {
         List<BasicRegion> result = new ArrayList<>();
         if (originMethod != null) {
             result = findDependedRegionByDepth(originMethod, Integer.MAX_VALUE, Integer.MAX_VALUE);
@@ -86,9 +87,11 @@ public class ASTCoreImpl implements ASTCore {
                 fieldDepth--;
             }
             for (PsiField field : pfields) {
-                BasicRegion fieldRegion = getFieldBasicRegion(field);
-                if (!fieldResult.contains(fieldRegion)) {
-                    fieldResult.add(fieldRegion);
+                if (field != null) {
+                    BasicRegion fieldRegion = getFieldBasicRegion(field);
+                    if (!fieldResult.contains(fieldRegion)) {
+                        fieldResult.add(fieldRegion);
+                    }
                 }
             }
             List<PsiMethod> pmethods = new ArrayList<>();
@@ -97,10 +100,12 @@ public class ASTCoreImpl implements ASTCore {
                 methodDepth--;
             }
             for (PsiMethod method : pmethods) {
-                BasicRegion methodRegion = getMethodBasicRegion(method);
-                if (!methodResult.contains(methodRegion)) {
-                    methodResult.add(methodRegion);
-                    q.add(method);
+                if (method != null) {
+                    BasicRegion methodRegion = getMethodBasicRegion(method);
+                    if (!methodResult.contains(methodRegion)) {
+                        methodResult.add(methodRegion);
+                        q.add(method);
+                    }
                 }
             }
         }
@@ -121,6 +126,7 @@ public class ASTCoreImpl implements ASTCore {
 
     private List<PsiField> findFieldInMethod(PsiMethod psiMethod) {
         List<PsiField> result = new ArrayList<>();
+        //PsiReferenceExpression
         Collection<PsiReferenceExpression> childOfRefer = PsiTreeUtil.findChildrenOfType(psiMethod, PsiReferenceExpression.class);
         for (PsiReferenceExpression refer : childOfRefer) {
             //因为找不到直接找引用全局字段的方法
@@ -146,9 +152,6 @@ public class ASTCoreImpl implements ASTCore {
         }
         //如果是method
         if (containingMethod != null) {
-            //将信息保留起来留到找依赖区域时用
-            //TODO
-//            psiFields = PsiTreeUtil.findChildrenOfType(psiFile, PsiField.class);
             originMethod = containingMethod;
             return getMethodBasicRegion(containingMethod);
         }
@@ -164,11 +167,13 @@ public class ASTCoreImpl implements ASTCore {
         result.setRegionFileName(getPath(psiField.getContainingFile().getVirtualFile().getPath()));
         result.setStartOffset(psiField.getTextRange().getStartOffset());
         result.setEndOffset(psiField.getTextRange().getEndOffset());
+//        System.out.println(fieldName);
         return result;
     }
 
     private BasicRegion getMethodBasicRegion(PsiMethod psiMethod) {
         String methodName = psiMethod.getNameIdentifier().getText();
+//        System.out.println(methodName);
         PsiParameterList methodParameterList = psiMethod.getParameterList();
         //将方法名和方法参数拼接成regionid
         String methodfinalName = buildMethodName(methodName, methodParameterList);
@@ -177,7 +182,6 @@ public class ASTCoreImpl implements ASTCore {
         result.setCodeType(CodeType.METHOD);
         result.setRegionFileName(getPath(psiMethod.getContainingFile().getVirtualFile().getPath()));
         result.setStartOffset(psiMethod.getTextRange().getStartOffset());
-        //TODO 使用start end 还是start length
         result.setEndOffset(psiMethod.getTextRange().getEndOffset());
         return result;
     }

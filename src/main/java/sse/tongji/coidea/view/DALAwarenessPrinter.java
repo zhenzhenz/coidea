@@ -21,6 +21,8 @@ import sse.tongji.dal.locksystem.BasicRegion;
 import sse.tongji.dal.locksystem.BasicRegionList;
 import sse.tongji.dal.locksystem.Lock;
 import sse.tongji.dal.locksystem.LockType;
+import sse.tongji.dal.userinfo.DalUser;
+import sse.tongji.dal.userinfo.DalUserGroup;
 
 import javax.print.Doc;
 import java.awt.*;
@@ -47,6 +49,8 @@ public class DALAwarenessPrinter {
     }
 
     public void refreshHighlight(String fileName) {
+//        System.out.println("RRRRefreshHighlight");
+//        System.out.println("BasicRegionList Size: " + BasicRegionList.getBasicRegionList().size());
         clearHighlight();
         addHighlight();
     }
@@ -62,40 +66,27 @@ public class DALAwarenessPrinter {
     }
 
     private void addHighlight() {
-//        log.info("---------------------------------------------");
-//        log.info(document.getText());
-//        log.info("---------------------------------------------");
-        for (Map.Entry<String, List<BasicRegion>> entry : BasicRegionList.getBasicRegionManagement().entrySet()) {
+        for (BasicRegion basicRegion : BasicRegionList.getBasicRegionList()) {
             Document document = null;
             if (LocalFileSystem.getInstance()
                     .refreshAndFindFileByPath(CoIDEAFilePathUtil
-                            .getStandardAbsolutePath(entry.getKey(), project.getBasePath())) != null) {
+                            .getStandardAbsolutePath(basicRegion.getRegionFileName(), project.getBasePath())) != null) {
                 document = FileDocumentManager.getInstance()
                         .getCachedDocument(LocalFileSystem.getInstance()
                                 .refreshAndFindFileByPath(CoIDEAFilePathUtil
-                                        .getStandardAbsolutePath(entry.getKey(), project.getBasePath())));
+                                        .getStandardAbsolutePath(basicRegion.getRegionFileName(), project.getBasePath())));
             }
-//            if (EditorFactory.getInstance().getEditors(document).length == 0) {
-//                continue;
-//            }
             if (document == null) {
                 continue;
             }
             Editor editor = EditorFactory.getInstance().getEditors(document)[0];
             addEditor(editor);
-            List<BasicRegion> basicRegionList = entry.getValue();
-            for (BasicRegion b : basicRegionList) {
-                log.info(entry.getKey() + "BasicRegionName:  " + b.getRegionId() + "区域的文件名： " + b.getRegionFileName() + "锁的数量： " + b.getLockList().size() + "锁定区域:" + b.getStartOffset() + "-" + b.getEndOffset());
-                if (b.getStartOffset() >= document.getText().length() || b.getEndOffset() >= document.getText().length()) {
-                    continue;
-                }
-                int lineStartNumber = document.getLineNumber(b.getStartOffset());
-                int lineEndNumber = document.getLineNumber(b.getEndOffset());
-                Color printerColor = getRegionColor(b);
-//                highlightManager.addRangeHighlight(editor, document.getLineStartOffset(lineStartNumber), document.getLineEndOffset(lineEndNumber), new TextAttributes(null, printerColor, null, EffectType.BOXED, 0), false, getHighLightListByEditor(editor));
-                highlightManager.addRangeHighlight(editor, b.getStartOffset(),b.getEndOffset(), new TextAttributes(null, printerColor, null, EffectType.BOXED, 0), false, getHighLightListByEditor(editor));
+            log.info("BasicRegionName:  " + basicRegion.getRegionId() + "区域的文件名： " + basicRegion.getRegionFileName() + "锁的数量： " + basicRegion.getLockList().size() + "锁定区域:" + basicRegion.getStartOffset() + "-" + basicRegion.getEndOffset());
+            if (basicRegion.getStartOffset() >= document.getText().length() || basicRegion.getEndOffset() >= document.getText().length()) {
+                continue;
             }
-
+            Color printerColor = getRegionColor(basicRegion);
+            highlightManager.addRangeHighlight(editor, basicRegion.getStartOffset(),basicRegion.getEndOffset(), new TextAttributes(null, printerColor, null, EffectType.BOXED, 0), false, getHighLightListByEditor(editor));
         }
     }
 
@@ -127,8 +118,8 @@ public class DALAwarenessPrinter {
                 return mixColorWithColor(mixColorWithColor(regionColor,new Color(255, 255, 255)), new Color(255, 255, 255));
             }
         } else if (basicRegion.getLockList().size() > 1) {
+
             for (Lock lk : basicRegion.getLockList()) {
-                //如果包含working的锁,锁颜色为写锁
                 if (lk.getLockType() == LockType.WORKINGLOCK) {
                     return colorSharedWriteLock;
                 }
@@ -147,12 +138,7 @@ public class DALAwarenessPrinter {
         int green = hashCode % 180;
         int blue = hashCode % 200;
         Color mix = new Color(255, 255, 255);
-//        Random random = new Random();
-//        int red = random.nextInt(256);
-//        int green = random.nextInt(256);
-//        int blue = random.nextInt(256);
-//
-        // mix the color
+
         if (mix != null) {
             red = (red + mix.getRed()) / 2;
             green = (green + mix.getGreen()) / 2;

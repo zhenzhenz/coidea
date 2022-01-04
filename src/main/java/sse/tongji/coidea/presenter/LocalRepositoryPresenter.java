@@ -30,10 +30,12 @@ import dev.mtage.eyjaot.core.util.EditOperationSourceEnum;
 import org.apache.commons.collections4.CollectionUtils;
 import sse.tongji.coidea.config.AppSettingsState;
 import sse.tongji.coidea.config.CoIDEAUIString;
+import sse.tongji.coidea.dal.DALUtil;
 import sse.tongji.coidea.listener.MyFileOpenCloseListener;
 import sse.tongji.coidea.listener.MyRepositoryListener;
 import sse.tongji.coidea.util.CoIDEAFilePathUtil;
 import sse.tongji.coidea.view.*;
+import sse.tongji.dal.core.DALCore;
 import sse.tongji.dal.userinfo.DalUserGroup;
 
 import java.io.IOException;
@@ -388,11 +390,12 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
     @Override
     public void onUserJoined(CoUser user) {
         super.onUserJoined(user);
-
+        DALCore.doDALUpdateUserByDALSetting(DALUtil.buildDalSettingMessage(user.getUserName(),user.getPersonalSettings().getDalPolicySettings()));
     }
 
     @Override
     public void onUserLeft(CoUser user, Date leaveTime) {
         super.onUserLeft(user, leaveTime);
+        DalUserGroup.removeUserBySiteName(user.getUserName());
     }
 }
