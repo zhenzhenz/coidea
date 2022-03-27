@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
  * @author mtage
  * @since 2021/3/17 20:44
  */
+@Deprecated
 public class SimpleNotifyInfoView implements INotificationView, IBasicCollaborationInfoView {
     private Project localProject;
     private final NotificationGroup errorGroup = NotificationGroup.balloonGroup("CoIDEA Error");
@@ -64,6 +65,14 @@ public class SimpleNotifyInfoView implements INotificationView, IBasicCollaborat
         Notification notification = errorGroup.createNotification(CoIDEAUIString.GENERAL_TITLE, msg,
                 NotificationType.WARNING, null);
         notification.notify(localProject);
+    }
+
+    @Override
+    public void disableGit() {
+    }
+
+    @Override
+    public void enableGit() {
     }
 
     @Override

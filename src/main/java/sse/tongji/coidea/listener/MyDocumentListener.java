@@ -32,16 +32,15 @@ public class MyDocumentListener implements DocumentListener {
         System.out.println("beforeDocumentChange");
         if (isRemotePlaying.get()) {
             System.out.println("isRemotePlaying");
-            return;
         }
-        System.out.println(event.toString());
+//        System.out.println(event.toString());
     }
 
     @Override
     public void documentChanged(@NotNull DocumentEvent event) {
-        if (isRemotePlaying.get()) {
-            return;
-        }
-        localFilePresenter.onLocalEdit(event);
+//        if (isRemotePlaying.get()) {
+//            return;
+//        }
+//        localFilePresenter.onLocalEdit(event);
     }
 }
