@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static java.awt.event.KeyEvent.*;
 
@@ -44,25 +43,27 @@ public class MyAllKeyListener implements IdeEventQueue.EventDispatcher {
             if (keyEvent.getID() != KEY_PRESSED) {
                 return false;
             }
-            log.info("key code={0} char={1} id={2} event={3}",
-                    keyEvent.getKeyCode(), keyEvent.getKeyChar(),
-                    keyEvent.getID(), keyEvent);
-            if (ignoredKeys.contains(keyEvent.getKeyCode())) {
-                return false;
-            }
-            if (keyMapKeys.contains(keyEvent.getKeyCode()) && ignoredKeyMapModifiers.contains(keyEvent.getModifiersEx())) {
-                return false;
-            }
-            try {
-                boolean lockResult = localFilePresenter.tryAcquireSemaphore(100, TimeUnit.MILLISECONDS);
-                if (!lockResult) {
-                    log.error("本地获取锁失败...");
-                    localFilePresenter.releaseLock();
-                    return true;
-                }
-            } catch (InterruptedException interruptedException) {
-                log.error("InterruptedException ", interruptedException);
-            }
+//            log.info("key code={0} char={1} id={2} event={3}",
+//                    keyEvent.getKeyCode(), keyEvent.getKeyChar(),
+//                    keyEvent.getID(), keyEvent);
+            log.info("key code={0} char={1} id={2}",
+                    keyEvent.getKeyCode(), keyEvent.getKeyChar(), keyEvent.getID());
+//            if (ignoredKeys.contains(keyEvent.getKeyCode())) {
+//                return false;
+//            }
+//            if (keyMapKeys.contains(keyEvent.getKeyCode()) && ignoredKeyMapModifiers.contains(keyEvent.getModifiersEx())) {
+//                return false;
+//            }
+//            try {
+//                boolean lockResult = localFilePresenter.tryAcquireLock(100, TimeUnit.MILLISECONDS);
+//                if (!lockResult) {
+//                    log.error("本地获取锁失败...");
+//                    localFilePresenter.releaseLock();
+//                    return true;
+//                }
+//            } catch (InterruptedException interruptedException) {
+//                log.error("InterruptedException ", interruptedException);
+//            }
         }
         return false;
     }

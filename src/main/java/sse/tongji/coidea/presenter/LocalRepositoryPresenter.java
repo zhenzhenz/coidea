@@ -16,6 +16,7 @@ import dev.mtage.error.CommonSysException;
 import dev.mtage.eyjaot.client.OtClient;
 import dev.mtage.eyjaot.client.entity.ClientCoFile;
 import dev.mtage.eyjaot.client.inter.ILocalFileEditor;
+import dev.mtage.eyjaot.client.inter.IStateBasedLocalFileEditor;
 import dev.mtage.eyjaot.client.inter.presenter.GeneralLocalRepositoryPresenter;
 import dev.mtage.eyjaot.client.inter.presenter.GeneralUnopenedFilePresenter;
 import dev.mtage.eyjaot.client.inter.presenter.IFilePresenter;
@@ -38,11 +39,13 @@ import sse.tongji.coidea.view.*;
 import sse.tongji.dal.core.DALCore;
 import sse.tongji.dal.userinfo.DalUserGroup;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -82,6 +85,12 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
     public LocalRepositoryPresenter(IBasicCollaborationInfoView collaborationInfoView, INotificationView notificationView,
                                     IRepositoryEditorView repositoryView) {
         super(collaborationInfoView, notificationView, repositoryView);
+    }
+
+    @Override
+    public File localRepoFile() {
+        log.info("当前base path=" + project.getBasePath());
+        return new File(project.getBasePath());
     }
 
     /**
@@ -161,7 +170,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         @Override
         protected Path getAbsolutePath() {
 //            log.info("{0} absolutePath:{1}", getPath(), Paths.get(CoEclipseFilePathUtil.getStandardAbsolutePath(getPath(), repositoryView.getDefaultProjectPath())));
-            return Paths.get(CoIDEAFilePathUtil.getStandardAbsolutePath(getPath(), repositoryView.getDefaultProjectPath().toString()));
+            return Paths.get(CoIDEAFilePathUtil.getStandardAbsolutePath(getPath(), repositoryView.getProjectPath().toString()));
         }
 
         @Override
@@ -169,10 +178,27 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
             log.info("本地未打开的文件插入 {0}", operation.getContent());
             super.onInsert(operation, source, coUser);
         }
+
+        @Override
+        public <V> V runInMain(Callable<V> task) {
+            ApplicationManager.getApplication().invokeAndWait(() -> {
+                try {
+                    task.call();
+                } catch (Exception e) {
+                    log.error("task execute error", e);
+                }
+            });
+            return null;
+        }
+
+        @Override
+        public void close() {
+            log.error(getPath() + " UnOpenFilePresenter cannot be closed");
+        }
     }
 
     @Override
-    public ILocalFileEditor getLocalFileEditor(String path) {
+    public IStateBasedLocalFileEditor getLocalFileEditor(String path) {
         return openedFilePresenters.stream().filter(p -> Objects.equals(p.getPath(), path))
                 .findAny().orElseGet(() -> {
                     log.info("构建未打开文件 {0} 的presenter", path);
@@ -189,7 +215,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
             this.otClient = OtClient.createWsClient(conf.getServerAddr());
             if (conf.isNewRepo()) {
                 try {
-                    byte[] repoData = repositoryView.readDefaultProjectAllData();
+                    byte[] repoData = repositoryView.readProjectAllData();
                     otClient.newRepo(conf.getRepoId(), conf.getUserName(), repoData,
                             DalPolicySettings.builder()
                                     .dalOpen(conf.isOpenDal())
@@ -261,6 +287,11 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
         openedFilePresenters.clear();
     }
 
+    @Override
+    public void onGitClicked() {
+        // TODO
+    }
+
     /**
      * 不可用
      * @see LocalRepositoryPresenter#onLocalFileOpen(FileEditorManager, VirtualFile)
@@ -286,7 +317,7 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
 
     public void onLocalFileCreate(VirtualFile file) {
         String projectRelativePath = FilePathUtil.getProjectRelativePath(file.getPath(),
-                repositoryView.getDefaultProjectPath().toString());
+                repositoryView.getProjectPath().toString());
         if (Files.isDirectory(Paths.get(file.getPath()))) {
             otClient.createDir(projectRelativePath, file.getName());
         }
@@ -298,14 +329,15 @@ public class LocalRepositoryPresenter extends GeneralLocalRepositoryPresenter {
     }
 
     public void onLocalFileOpen(FileEditorManager source, VirtualFile file) {
-        log.info("local file open {0}", file.getPath());
+        log.info("local file open {0} relative path={1}", file.getPath(),
+                CoIDEAFilePathUtil.getProjectRelativePath(file.getPath(), project));
         if (GeneralFileIgnoreUtil.isIgnored(file.getName())) {
             log.info("local file opened and ignored {0}", file.getPath());
             return;
         }
         LocalFilePresenter localFilePresenter = new LocalFilePresenter(project, file, otClient);
         ApplicationManager.getApplication().invokeLater(() -> {
-            ClientCoFile clientCoFile = otClient.openFile(localFilePresenter);
+            ClientCoFile clientCoFile = otClient.openFileV2(localFilePresenter);
             localFilePresenter.setOtClientCoFile(clientCoFile);
             localFilePresenter.setLocalRepositoryPresenter(this);
             this.openedFilePresenters.add(localFilePresenter);

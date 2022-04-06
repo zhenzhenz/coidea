@@ -5,12 +5,14 @@ import com.intellij.ide.IdeEventQueue;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.event.CaretEvent;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import dev.mtage.eyjaot.client.OtClient;
 import dev.mtage.eyjaot.client.entity.ClientCoFile;
@@ -37,6 +39,7 @@ import sse.tongji.dal.editingoperation.OperationType;
 import sse.tongji.dal.userinfo.DalUserGroup;
 
 import java.util.Objects;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 
@@ -78,8 +81,8 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
 
     }
 
-    public boolean tryAcquireSemaphore(long timeOut, TimeUnit timeUnit) throws InterruptedException {
-        return this.documentSemaphore.tryAcquire(timeOut, timeUnit);
+    public boolean tryAcquireLock(long timeOut, TimeUnit timeUnit) throws InterruptedException {
+        return this.documentLock.tryLock(timeOut, timeUnit);
     }
 
     public void onLocalEdit(DocumentEvent event) {
@@ -110,10 +113,11 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
     }
 
     public void localCaretMove(CaretEvent event) {
-        log.purpled("光标位置变化 : getCaretModel() : " + event.getEditor().getCaretModel().getOffset());
+        log.purpled("本地光标位置变化: " + event.getEditor().getCaretModel().getOffset());
         if (notInitDone()) {
             return;
         }
+        // DAL 部分 ↓
         //判断当前区域是否可以插入光标
         System.out.println("Before" + DalUserGroup.getDalUserGroup());
         DALCore.doDALUpdateUserByDALSetting(DALUtil.buildDalSettingMessage(getLocalUser().getUserName(),getLocalUser().getPersonalSettings().getDalPolicySettings()));
@@ -229,4 +233,21 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
         return this.otClientCoFile.getLocalUser().getPersonalSettings().getDalPolicySettings();
     }
 
+    @Override
+    public String currentContent() {
+        return ApplicationManager.getApplication().runReadAction((Computable<String>)
+                () -> FileDocumentManager.getInstance().getDocument(virtualFile).getText());
+    }
+
+    @Override
+    public <V> V runInMain(Callable<V> task) {
+        ApplicationManager.getApplication().invokeAndWait(() -> {
+            try {
+                task.call();
+            } catch (Exception e) {
+                log.error("task execute error", e);
+            }
+        });
+        return null;
+    }
 }
