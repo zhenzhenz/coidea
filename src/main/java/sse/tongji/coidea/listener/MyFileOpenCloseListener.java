@@ -28,4 +28,5 @@ public class MyFileOpenCloseListener implements FileEditorManagerListener {
     public void fileClosed(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
         localRepositoryPresenter.onLocalFileClose(source, file);
     }
+
 }

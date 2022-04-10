@@ -10,7 +10,7 @@ configurations.all {
 }
 
 group 'sse.tongji'
-version '1.0-SNAPSHOT'
+version '0.9-SNAPSHOT'
 
 
 repositories {
@@ -41,12 +41,13 @@ repositories {
             password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
         }
     }
+    mavenLocal()
 }
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     implementation 'dev.mtage:eyja-ot-client:Strawberry-Tart-0.1-SNAPSHOT'
-    implementation 'sse.tongji:dal-core-xwh:0.0.1-SNAPSHOT'
+    implementation 'sse.tongji:dal-core-xwh:0.1.0-SNAPSHOT'
     compileOnly 'org.projectlombok:lombok:1.18.20'
     annotationProcessor 'org.projectlombok:lombok:1.18.20'
 }

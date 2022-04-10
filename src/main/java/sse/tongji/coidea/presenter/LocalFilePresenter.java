@@ -26,16 +26,17 @@ import dev.mtage.eyjaot.core.util.EditOperationSourceEnum;
 import dev.mtage.eyjaot.core.util.RangeSetUtil;
 import lombok.Setter;
 import sse.tongji.coidea.dal.ASTCoreImpl;
-import sse.tongji.coidea.dal.DalCore;
+import sse.tongji.coidea.dal.DALUtil;
 import sse.tongji.coidea.listener.MyAllKeyListener;
 import sse.tongji.coidea.listener.MyCaretListener;
 import sse.tongji.coidea.listener.MyDocumentListener;
 import sse.tongji.coidea.util.CoIDEAFilePathUtil;
 import sse.tongji.coidea.view.DALAwarenessPrinter;
 import sse.tongji.dal.astoperation.ASTCoreObject;
-import sse.tongji.dal.locksystem.BasicRegionList;
+import sse.tongji.dal.core.DALCore;
+import sse.tongji.dal.locksystem.CheckPermission;
+import sse.tongji.dal.editingoperation.OperationType;
 import sse.tongji.dal.userinfo.DalUserGroup;
-import sse.tongji.dal.userinfo.OperationType;
 
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -99,13 +100,14 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
         }
 
         // DALPart
-        dalChangeEditingFile();
         if (event.getOldLength() != 0) {
-            DalCore.doCFDbyUserOperation(getLocalUser().getUserName(), getPath(), OperationType.DELETE, event.getOffset(), event.getOldLength(), getDalPolicySettings());
+            DALCore.doDALUpdateUserByDALSetting(DALUtil.buildDalSettingMessage(getLocalUser().getUserName(),getLocalUser().getPersonalSettings().getDalPolicySettings()));
+            DALCore.doDALUpdateByEditingOperation(DALUtil.buildDalEditingOperation(getLocalUser().getUserName(), OperationType.DELETE, event.getOffset(), event.getOldLength(),getPath()));
         } else if (event.getNewLength() != 0) {
-            DalCore.doCFDbyUserOperation(getLocalUser().getUserName(), getPath(), OperationType.INSERT, event.getOffset(), event.getNewLength(), getDalPolicySettings());
+            DALCore.doDALUpdateUserByDALSetting(DALUtil.buildDalSettingMessage(getLocalUser().getUserName(),getLocalUser().getPersonalSettings().getDalPolicySettings()));
+            DALCore.doDALUpdateByEditingOperation(DALUtil.buildDalEditingOperation(getLocalUser().getUserName(), OperationType.INSERT, event.getOffset(), event.getNewLength(),getPath()));
         }
-        dalAwarenessPrinter.refreshHighlight();
+        dalAwarenessPrinter.refreshHighlight(getPath());
         log.info("本地文档变化处理完成 尝试释放文档编辑锁");
         releaseLock();
     }
@@ -117,32 +119,27 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
         }
         // DAL 部分 ↓
         //判断当前区域是否可以插入光标
-        boolean isPermitted;
-        if (DalUserGroup.dalUserGroup.size() == 0) {
-            //换了新文档，直接允许
-            isPermitted = true;
-        } else {
-            isPermitted = DalCore.doDalPermissionCheck(getLocalUser().getUserName(), getPath(), OperationType.SELECT, event.getEditor().getCaretModel().getOffset(), 0, getDalPolicySettings());
-        }
-        if (isPermitted) {
-            DalCore.doCFDbyUserOperation(getLocalUser().getUserName(), getPath(), OperationType.SELECT, event.getEditor().getCaretModel().getOffset(), 0, getDalPolicySettings());
+        System.out.println("Before" + DalUserGroup.getDalUserGroup());
+        DALCore.doDALUpdateUserByDALSetting(DALUtil.buildDalSettingMessage(getLocalUser().getUserName(),getLocalUser().getPersonalSettings().getDalPolicySettings()));
+        System.out.println("After" + DalUserGroup.getDalUserGroup());
+        if (CheckPermission.doCheckPermission(DALUtil.buildDalEditingOperation(getLocalUser().getUserName(), OperationType.SELECT, event.getEditor().getCaretModel().getOffset(), 0,getPath()))) {
+            System.out.println("Before1" + DalUserGroup.getDalUserGroup());
+            DALCore.doDALUpdateByEditingOperation(DALUtil.buildDalEditingOperation(getLocalUser().getUserName(),  OperationType.SELECT, event.getEditor().getCaretModel().getOffset(), 0,getPath()));
+            System.out.println("Afte1" + DalUserGroup.getDalUserGroup());
             //只有本地permit，才给远端发送光标移动的信息
             otClient.caretMove(otClientCoFile, event.getEditor().getCaretModel().getOffset());
         } else {
             //TODO 提醒这里不能修改文字 并且拒绝任何的修改操作
             Messages.showInfoMessage("You can't work in this Region", "INFO");
         }
-        dalAwarenessPrinter.refreshHighlight();
+        dalAwarenessPrinter.refreshHighlight(getPath());
     }
 
     @Override
     public void close() {
         getDocument().removeDocumentListener(myDocumentListener);
         IdeEventQueue.getInstance().removeDispatcher(myAllKeyListener);
-        Editor selectedTextEditor = FileEditorManager.getInstance(project).getSelectedTextEditor();
-        if (Objects.nonNull(selectedTextEditor)) {
-            selectedTextEditor.getCaretModel().removeCaretListener(myCaretListener);
-        }
+//        FileEditorManager.getInstance(project).getSelectedTextEditor().getCaretModel().removeCaretListener(myCaretListener);
     }
 
     @Override
@@ -159,9 +156,13 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
     public void onCaretMove(int offset, CoUser coUser) {
         ApplicationManager.getApplication().invokeAndWait(() -> {
             //监听到远端光标移动， 说明远端允许编辑此位置（同意后才会发送光标移动消息）
-            log.info("CoUser用户移动光标到" + offset);
-            DalCore.doCFDbyUserOperation(coUser.getUserName(), getPath(), OperationType.SELECT, offset, 0, coUser.getPersonalSettings().getDalPolicySettings());
-            dalAwarenessPrinter.refreshHighlight();
+            if (getDalPolicySettings().isDalOpen()) {
+                log.info("CoUser用户移动光标到" + offset);
+                DALCore.doDALUpdateUserByDALSetting(DALUtil.buildDalSettingMessage(coUser.getUserName(),coUser.getPersonalSettings().getDalPolicySettings()));
+                DALCore.doDALUpdateByEditingOperation(DALUtil.buildDalEditingOperation(coUser.getUserName(), OperationType.SELECT, offset, 0,getPath()));
+                log.info("CoUser PolicySetting : field Depth = {0}, method Depth = {1}", coUser.getPersonalSettings().getDalPolicySettings().getFieldDepth(), coUser.getPersonalSettings().getDalPolicySettings().getMethodDepth());
+                dalAwarenessPrinter.refreshHighlight(getPath());
+            }
         });
     }
 
@@ -174,9 +175,10 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
         ApplicationManager.getApplication().invokeAndWait(() -> {
             WriteCommandAction.runWriteCommandAction(project,
                     () -> getDocument().insertString(fileContentInsertAction.getPosition(), fileContentInsertAction.getContent()));
-            DalCore.doCFDbyUserOperation(coUser.getUserName(), getPath(), OperationType.INSERT,
-                    fileContentInsertAction.getPosition(), fileContentInsertAction.getContent().length(), coUser.getPersonalSettings().getDalPolicySettings());
-            dalAwarenessPrinter.refreshHighlight();
+            DALCore.doDALUpdateUserByDALSetting(DALUtil.buildDalSettingMessage(coUser.getUserName(),coUser.getPersonalSettings().getDalPolicySettings()));
+            DALCore.doDALUpdateByEditingOperation(DALUtil.buildDalEditingOperation(coUser.getUserName(), OperationType.INSERT,
+                    fileContentInsertAction.getPosition(), fileContentInsertAction.getContent().length(),getPath()));
+            dalAwarenessPrinter.refreshHighlight(getPath());
             this.myDocumentListener.remotePlayingDone();
         });
     }
@@ -192,10 +194,9 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
                 });
                 for (Range<Integer> range : fileContentDeleteAction.getDeleteRangeSet().asRanges()) {
                     int start = range.lowerEndpoint();
-                    DalCore.doCFDbyUserOperation(coUser.getUserName(), getPath(), OperationType.DELETE, start,
-                            RangeSetUtil.lengthOfRange(range), coUser.getPersonalSettings().getDalPolicySettings());
+                    DALCore.doDALUpdateUserByDALSetting(DALUtil.buildDalSettingMessage(coUser.getUserName(),coUser.getPersonalSettings().getDalPolicySettings()));
+                    DALCore.doDALUpdateByEditingOperation(DALUtil.buildDalEditingOperation(coUser.getUserName(),OperationType.DELETE, start, RangeSetUtil.lengthOfRange(range),getPath()));
                 }
-                dalAwarenessPrinter.refreshHighlight();
             });
             this.myDocumentListener.remotePlayingDone();
         });
@@ -223,18 +224,6 @@ public class LocalFilePresenter extends GeneralLocalFilePresenter {
         return FileDocumentManager.getInstance().getDocument(virtualFile);
     }
 
-    private void dalChangeEditingFile() {
-        if (DalCore.getLocalPath() == null) {
-            DalCore.setLocalPath(getPath());
-            BasicRegionList.clearBasicRegionList();
-        } else if (!DalCore.getLocalPath().equals(getPath())) {
-            //换文档了 需要更新用户表
-            log.purpled("换文档了，之前文档为：     " + DalCore.getLocalPath() + "    之后文档为：      " + getPath());
-            DalUserGroup.dalUserGroup.clear();
-            DalCore.setLocalPath(getPath());
-            BasicRegionList.clearBasicRegionList();
-        }
-    }
 
     private CoUser getLocalUser() {
         return this.otClientCoFile.getLocalUser();
