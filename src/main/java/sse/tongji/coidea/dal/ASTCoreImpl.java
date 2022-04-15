@@ -156,7 +156,7 @@ public class ASTCoreImpl implements ASTCore {
             return getMethodBasicRegion(containingMethod);
         }
         //如果是OpenArea
-        return getOpenAreaBasicRegion();
+        return getOpenAreaBasicRegion(psiElement);
     }
 
     private BasicRegion getFieldBasicRegion(PsiField psiField) {
@@ -186,8 +186,9 @@ public class ASTCoreImpl implements ASTCore {
         return result;
     }
 
-    private BasicRegion getOpenAreaBasicRegion() {
+    private BasicRegion getOpenAreaBasicRegion(PsiElement psiElement) {
         BasicRegion openArea = new BasicRegion("OpenArea", RegionType.OPENAREA);
+        openArea.setRegionFileName(getPath(psiElement.getContainingFile().getVirtualFile().getPath()));
         return openArea;
     }
 
