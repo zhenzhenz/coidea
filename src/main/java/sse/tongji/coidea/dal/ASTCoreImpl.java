@@ -188,6 +188,7 @@ public class ASTCoreImpl implements ASTCore {
 
     private BasicRegion getOpenAreaBasicRegion() {
         BasicRegion openArea = new BasicRegion("OpenArea", RegionType.OPENAREA);
+        openArea.setRegionFileName("OpenAreaFile");
         return openArea;
     }
 
