@@ -10,7 +10,7 @@ configurations.all {
 }
 
 group 'sse.tongji'
-version '0.9-SNAPSHOT'
+version 'Strawberry-Tart-0.1-SNAPSHOT'
 
 
 repositories {
